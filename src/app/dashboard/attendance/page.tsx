@@ -174,7 +174,7 @@ export default function AttendancePage() {
                       <TableRow key={record.id}>
                         {role !== 'Employee' && <TableCell className="font-medium">{getEmployeeName(record.employeeId)}</TableCell>}
                         <TableCell>
-                          <Badge variant={getStatusVariant(record.status)}>
+                          <Badge variant={getStatusVariant(record.status)} className={record.status === "Present" ? "bg-emerald-500 text-white" : ""}>
                             {record.status}
                           </Badge>
                         </TableCell>
