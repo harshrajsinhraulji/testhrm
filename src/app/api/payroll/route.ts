@@ -2,8 +2,17 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import type { SalaryStructure, PaySlip } from '@/lib/types';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
+
+const salaryStructureUpdateSchema = z.object({
+  employeeId: z.string(), // This is the employee's DB UUID
+  basicSalary: z.number().min(0),
+  hra: z.number().min(0),
+  otherAllowances: z.number().min(0),
+  pf: z.number().min(0),
+});
 
 export async function GET(req: Request) {
   try {
@@ -37,6 +46,7 @@ export async function GET(req: Request) {
       // Fetching all salary structures for admin view
       const { rows } = await db.query(
         `SELECT 
+          e.id as "employeeDbId",
           e.employee_id as "employeeId",
           e.name as "employeeName",
           COALESCE(ss.basic_salary, 0) as "basicSalary",
@@ -49,7 +59,8 @@ export async function GET(req: Request) {
       );
 
        const salaryStructures: SalaryStructure[] = rows.map(row => ({
-        employeeId: row.employeeId,
+        employeeDbId: row.employeeDbId, // The UUID from the employees table
+        employeeId: row.employeeId, // The human-readable ID
         employeeName: row.employeeName,
         basicSalary: parseFloat(row.basicSalary),
         hra: parseFloat(row.hra),
@@ -64,4 +75,38 @@ export async function GET(req: Request) {
     console.error('API Error fetching payroll data:', error);
     return NextResponse.json({ message: 'Failed to fetch payroll data' }, { status: 500 });
   }
+}
+
+export async function PATCH(req: Request) {
+    try {
+        const body = await req.json();
+        const validation = salaryStructureUpdateSchema.safeParse(body);
+
+        if (!validation.success) {
+            return NextResponse.json({ message: 'Invalid input', errors: validation.error.issues }, { status: 400 });
+        }
+
+        const { employeeId, basicSalary, hra, otherAllowances, pf } = validation.data;
+
+        // Use an "UPSERT" query to either insert a new structure or update an existing one.
+        const query = `
+            INSERT INTO salary_structures (employee_id, basic_salary, hra, other_allowances, pf)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (employee_id)
+            DO UPDATE SET
+                basic_salary = EXCLUDED.basic_salary,
+                hra = EXCLUDED.hra,
+                other_allowances = EXCLUDED.other_allowances,
+                pf = EXCLUDED.pf
+            RETURNING *;
+        `;
+
+        const { rows } = await db.query(query, [employeeId, basicSalary, hra, otherAllowances, pf]);
+
+        return NextResponse.json(rows[0]);
+
+    } catch (error) {
+        console.error('API Error updating salary structure:', error);
+        return NextResponse.json({ message: 'Failed to update salary structure' }, { status: 500 });
+    }
 }
