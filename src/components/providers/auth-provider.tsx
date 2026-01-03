@@ -108,12 +108,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signup = async (name: string, email: string, pass: string, employeeId: string, role: UserRole): Promise<User | null> => {
+  const signup = async (name: string, email: string, pass: string, employeeId: string, role: UserRole, department: string, position: string): Promise<User | null> => {
     try {
         const response = await fetch('/api/auth/signup', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password: pass, employeeId, role }),
+            body: JSON.stringify({ name, email, password: pass, employeeId, role, department, position }),
         });
 
         if (!response.ok) {

@@ -20,7 +20,32 @@ import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import type { UserRole } from "@/lib/types";
+
+// Mock data for dropdowns, same as in profile-form
+const departments = [
+  "Engineering",
+  "Product",
+  "Design",
+  "Sales",
+  "Marketing",
+  "Human Resources",
+  "Finance",
+  "Customer Support",
+];
+
+const positions = [
+  "Software Engineer",
+  "Senior Software Engineer",
+  "Product Manager",
+  "UX/UI Designer",
+  "Sales Development Representative",
+  "Marketing Manager",
+  "HR Generalist",
+  "Accountant",
+  "Customer Support Specialist",
+  "Team Lead",
+];
+
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -31,7 +56,8 @@ const formSchema = z.object({
   password: z.string().min(8, {
     message: "Password must be at least 8 characters.",
   }),
-  role: z.enum(["Employee", "HR"], { required_error: "Please select a role."}),
+  department: z.string({ required_error: "Please select a department." }),
+  position: z.string({ required_error: "Please select a position." }),
 });
 
 export function SignupForm() {
@@ -47,7 +73,6 @@ export function SignupForm() {
       employeeId: "",
       email: "",
       password: "",
-      role: "Employee",
     },
   });
 
@@ -55,7 +80,8 @@ export function SignupForm() {
     setLoading(true);
     setError(null);
     try {
-      const user = await signup(values.name, values.email, values.password, values.employeeId, values.role);
+      // The role is now fixed to 'Employee'
+      const user = await signup(values.name, values.email, values.password, values.employeeId, 'Employee', values.department, values.position);
       if (user) {
         router.push("/dashboard");
       } else {
@@ -91,8 +117,7 @@ export function SignupForm() {
             </FormItem>
           )}
         />
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
+        <FormField
             control={form.control}
             name="employeeId"
             render={({ field }) => (
@@ -105,28 +130,53 @@ export function SignupForm() {
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="role"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Role</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                        <SelectItem value="Employee">Employee</SelectItem>
-                        <SelectItem value="HR">HR</SelectItem>
-                    </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        
+        <FormField
+          control={form.control}
+          name="department"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Department</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                      <SelectTrigger>
+                          <SelectValue placeholder="Select a department" />
+                      </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                      {departments.map(dept => (
+                          <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                      ))}
+                  </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="position"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Position</FormLabel>
+               <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormControl>
+                  <SelectTrigger>
+                  <SelectValue placeholder="Select a position" />
+                  </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                  {positions.map(pos => (
+                      <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                  ))}
+              </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="email"

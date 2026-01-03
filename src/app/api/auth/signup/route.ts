@@ -5,10 +5,10 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password, employeeId, role } = await req.json();
+    const { name, email, password, employeeId, department, position } = await req.json();
 
     // Basic validation
-    if (!name || !email || !password || !employeeId || !role) {
+    if (!name || !email || !password || !employeeId || !department || !position) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
     }
     
@@ -22,10 +22,13 @@ export async function POST(req: Request) {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
     
-    // Insert new user
+    // New users are always 'Employee'
+    const role = 'Employee';
+
+    // Insert new user with department and position
     const { rows: newUsers } = await db.query(
-      'INSERT INTO employees (name, email, password_hash, employee_id, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role, employee_id, avatar_url, position, department',
-      [name, email, passwordHash, employeeId, role]
+      'INSERT INTO employees (name, email, password_hash, employee_id, role, department, position) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, name, email, role, employee_id, avatar_url, position, department',
+      [name, email, passwordHash, employeeId, role, department, position]
     );
 
     const newUser = newUsers[0];
