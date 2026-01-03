@@ -26,7 +26,6 @@ import { Loader2 } from "lucide-react";
 import { differenceInDays, parse } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
-import { mockLeaveRequests } from "@/lib/data";
 import { useAuth } from "@/hooks/use-auth";
 import {
   AlertDialog,
@@ -61,13 +60,15 @@ const formSchema = z.object({
   path: ["endDate"],
 });
 
+
 type LeaveRequestFormValues = z.infer<typeof formSchema>;
 
 type LeaveRequestFormProps = {
     setOpen: (open: boolean) => void;
+    onFormSubmit: () => void;
 };
 
-export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
+export function LeaveRequestForm({ setOpen, onFormSubmit }: LeaveRequestFormProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [loading, setLoading] = React.useState(false);
@@ -102,42 +103,44 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
     return 0;
   };
 
-  const handleConfirmSubmit = () => {
-    if (!formData) return;
+  const handleConfirmSubmit = async () => {
+    if (!formData || !user) return;
     setLoading(true);
 
-    // Simulate API call for adding to mock data
-    setTimeout(() => {
-        if (!user?.employeeDetails?.employeeId) {
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: "Could not identify employee. Please log in again.",
-            });
-            setLoading(false);
-            return;
-        }
+    try {
+      const response = await fetch('/api/leave', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          employeeId: user.id,
+          employeeName: user.name,
+        }),
+      });
 
-        mockLeaveRequests.unshift({
-            id: `leave-${Date.now()}`,
-            employeeId: user.employeeDetails.employeeId,
-            employeeName: user.name,
-            leaveType: formData.leaveType,
-            startDate: formData.startDate,
-            endDate: formData.endDate,
-            reason: formData.reason,
-            status: "Pending",
-        });
+      if (!response.ok) {
+        throw new Error('Failed to submit leave request.');
+      }
+      
+      toast({
+        title: "Leave Request Submitted",
+        description: "Your request has been sent for approval.",
+      });
 
+      onFormSubmit(); // Re-fetch leave requests on the parent page
+      setIsConfirmOpen(false);
+      setOpen(false);
+      form.reset();
+
+    } catch (error: any) {
         toast({
-            title: "Leave Request Submitted",
-            description: "Your request has been sent for approval.",
+            variant: "destructive",
+            title: "Error",
+            description: error.message || "Could not submit your request. Please try again.",
         });
+    } finally {
         setLoading(false);
-        setIsConfirmOpen(false);
-        setOpen(false);
-        form.reset();
-    }, 1000);
+    }
   };
 
 
