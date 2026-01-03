@@ -175,7 +175,7 @@ export default function AttendancePage() {
             </CardHeader>
             <CardContent>
                 <AttendanceStreak 
-                    employeeId={user?.employeeDetails.employeeId} 
+                    employeeId={user?.employeeDetails?.employeeId} 
                     attendanceRecords={attendanceRecords}
                 />
             </CardContent>
