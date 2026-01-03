@@ -1,41 +1,53 @@
+'use client';
 
-"use client";
-
-import { StatsCards } from "@/components/dashboard/stats-cards";
-import { EmployeeRoster } from "@/components/dashboard/employee-roster";
-import { RecentLeaveRequests } from "@/components/dashboard/recent-leave-requests";
-import { PageHeader } from "@/components/page-header";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { useAuth } from "@/hooks/use-auth";
-import { AdminCharts } from "@/components/dashboard/admin-charts";
-import { EmployeeCharts } from "@/components/dashboard/employee-charts";
-
+import { StatsCards } from '@/components/dashboard/stats-cards';
+import { EmployeeRoster } from '@/components/dashboard/employee-roster';
+import { RecentLeaveRequests } from '@/components/dashboard/recent-leave-requests';
+import { PageHeader } from '@/components/page-header';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardDescription,
+} from '@/components/ui/card';
+import { useAuth } from '@/hooks/use-auth';
+import { AdminCharts } from '@/components/dashboard/admin-charts';
+import { EmployeeCharts } from '@/components/dashboard/employee-charts';
+import { EmployeeDashboardCards } from '@/components/dashboard/employee-dashboard-cards';
 
 const getWelcomeContent = (role: string | null, name?: string) => {
-    switch (role) {
-        case 'Admin':
-            return { title: 'Admin Dashboard', description: "Here's a summary of HR activities today." };
-        case 'HR':
-            return { title: `Welcome, ${name}!`, description: "Here's an overview of employee management." };
-        case 'Employee':
-        default:
-            return { title: `Welcome, ${name}!`, description: "Manage your profile, attendance, and leave requests." };
-    }
-}
+  switch (role) {
+    case 'Admin':
+      return {
+        title: 'Admin Dashboard',
+        description: "Here's a summary of HR activities today.",
+      };
+    case 'HR':
+      return {
+        title: `Welcome, ${name}!`,
+        description: "Here's an overview of employee management.",
+      };
+    case 'Employee':
+    default:
+      return {
+        title: `Welcome, ${name}!`,
+        description:
+          'Manage your profile, attendance, and leave requests.',
+      };
+  }
+};
 
 export default function DashboardPage() {
   const { user, role } = useAuth();
-  
+
   const { title, description } = getWelcomeContent(role, user?.name);
   const isAdminOrHR = role === 'Admin' || role === 'HR';
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title={title}
-        description={description} 
-      />
-      
+      <PageHeader title={title} description={description} />
+
       {isAdminOrHR ? (
         <>
           <StatsCards />
@@ -44,7 +56,9 @@ export default function DashboardPage() {
             <Card className="lg:col-span-3">
               <CardHeader>
                 <CardTitle>Employee Roster</CardTitle>
-                <CardDescription>An overview of all employees in the system.</CardDescription>
+                <CardDescription>
+                  An overview of all employees in the system.
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <EmployeeRoster />
@@ -54,7 +68,9 @@ export default function DashboardPage() {
             <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle>Recent Leave Requests</CardTitle>
-                <CardDescription>A summary of the most recent leave requests.</CardDescription>
+                <CardDescription>
+                  A summary of the most recent leave requests.
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <RecentLeaveRequests />
@@ -63,7 +79,10 @@ export default function DashboardPage() {
           </div>
         </>
       ) : (
-        <EmployeeCharts />
+        <div className="space-y-6">
+          <EmployeeDashboardCards />
+          <EmployeeCharts />
+        </div>
       )}
     </div>
   );
