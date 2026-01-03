@@ -133,7 +133,7 @@ export default function AttendancePage() {
                 <Button onClick={() => handleAttendanceAction('checkin')} disabled={isCheckedIn || !!todayUserRecord?.checkIn}>
                     Check In
                 </Button>
-                <Button onClick={() => handleAttendanceAction('checkout')} variant="outline" disabled={!isCheckedIn || !!todayUserR'ecord?.checkOut}>
+                <Button onClick={() => handleAttendanceAction('checkout')} variant="outline" disabled={!isCheckedIn || !!todayUserRecord?.checkOut}>
                     Check Out
                 </Button>
             </div>
@@ -204,7 +204,7 @@ export default function AttendancePage() {
             </CardHeader>
             <CardContent>
                 <AttendanceStreak 
-                    employeeId={user?.id} 
+                    employeeId={user?.employeeDetails?.employeeId} 
                     attendanceRecords={attendanceRecords}
                 />
             </CardContent>
