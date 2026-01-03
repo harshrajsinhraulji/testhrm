@@ -29,12 +29,13 @@ export async function POST(req: Request) {
     
     // Construct user object to return, excluding sensitive data
     const user: User = {
-        id: userFromDb.id,
+        id: userFromDb.id, // Auth UID will be set from client, this is DB id for now
         name: userFromDb.name,
         email: userFromDb.email,
         role: userFromDb.role,
         avatarUrl: userFromDb.avatar_url,
         employeeDetails: {
+            id: userFromDb.id, // This is the crucial employee UUID from the database
             employeeId: userFromDb.employee_id,
             department: userFromDb.department,
             position: userFromDb.position,
@@ -51,12 +52,13 @@ export async function POST(req: Request) {
 
 
     // Create JWT token
-    // Note: In a real production app, use a strong, secret key from environment variables.
     const secret = process.env.JWT_SECRET || 'your-super-secret-key';
     const token = jwt.sign({ userId: user.id, role: user.role }, secret, {
       expiresIn: '1h',
     });
 
+    // In the response, we send back the full user object including the DB UUID
+    // and the JWT token.
     return NextResponse.json({ user, token });
 
   } catch (error) {

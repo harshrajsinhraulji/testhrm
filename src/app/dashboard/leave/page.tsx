@@ -53,12 +53,13 @@ export default function LeavePage() {
   const { toast } = useToast();
 
   const fetchLeaveRequests = useCallback(async () => {
-    if (!user) return;
+    if (!user?.employeeDetails?.id) return;
     setLoading(true);
     try {
+      // Use employeeDetails.id (the UUID) for fetching, or no param for admin
       const url = role === 'Admin' || role === 'HR'
         ? '/api/leave'
-        : `/api/leave?employeeId=${user.id}`;
+        : `/api/leave?employeeId=${user.employeeDetails.id}`;
       
       const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to fetch leave requests.");

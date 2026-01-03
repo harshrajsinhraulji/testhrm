@@ -44,8 +44,8 @@ const formSchema = z.object({
   leaveType: z.enum(["Paid", "Sick", "Unpaid", "Maternity"], {
     required_error: "Please select a leave type.",
   }),
-  startDate: z.string().regex(dateRegex, "Date must be in YYYY-MM-DD format."),
-  endDate: z.string().regex(dateRegex, "Date must be in YYYY-MM-DD format."),
+  startDate: z.string().regex(dateRegex, "Date must be in YYYY-MM-DD format.").min(1, "Start date is required."),
+  endDate: z.string().regex(dateRegex, "Date must be in YYYY-MM-DD format.").min(1, "End date is required."),
   reason: z.string().min(10, { message: "Reason must be at least 10 characters." }).max(200),
 }).refine(data => {
     try {
@@ -104,7 +104,14 @@ export function LeaveRequestForm({ setOpen, onFormSubmit }: LeaveRequestFormProp
   };
 
   const handleConfirmSubmit = async () => {
-    if (!formData || !user) return;
+    if (!formData || !user?.employeeDetails?.id) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not identify employee. Please log in again.",
+        });
+        return;
+    }
     setLoading(true);
 
     try {
@@ -113,8 +120,7 @@ export function LeaveRequestForm({ setOpen, onFormSubmit }: LeaveRequestFormProp
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          employeeId: user.id,
-          employeeName: user.name,
+          employeeUuid: user.employeeDetails.id, // Use the correct database UUID
         }),
       });
 

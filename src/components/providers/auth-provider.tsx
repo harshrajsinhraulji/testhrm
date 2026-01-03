@@ -2,7 +2,7 @@
 "use client";
 
 import { AuthContext } from "@/hooks/use-auth";
-import type { User, UserRole } from "@/lib/types";
+import type { User, UserRole, EmployeeUUID } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -47,8 +47,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const storedUser = getStoredUser();
     const storedToken = getStoredToken();
     if (storedUser && storedToken) {
-      // Here you might want to verify the token with a backend endpoint
-      // For now, we'll trust it if it exists.
       setUser(storedUser);
     }
     setLoading(false);
@@ -66,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: 'Admin',
         avatarUrl: adminAvatar?.imageUrl || 'https://placehold.co/100x100',
         employeeDetails: {
+          id: 'admin-user-static' as EmployeeUUID, // Use static ID for mock admin
           employeeId: 'DF-ADMIN',
           department: 'Management',
           position: 'System Administrator',
@@ -81,11 +80,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       setUser(adminUser);
       setStoredUser(adminUser);
-      setStoredToken('static-admin-token'); // Use a static token for the mock user
+      setStoredToken('static-admin-token');
       return adminUser;
     }
 
-    // Dynamic login for all other users
     try {
         const response = await fetch('/api/auth/login', {
             method: 'POST',
@@ -98,6 +96,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         const { user, token } = await response.json();
+        
+        // The API now returns the correct User object shape with the employee DB UUID
         setUser(user);
         setStoredUser(user);
         setStoredToken(token);
@@ -121,8 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             throw new Error(errorData.message || 'Signup failed');
         }
 
-        const newUser: User = await response.json();
-        // After signup, log them in directly.
+        // After signup, log them in directly to get the full user object with JWT
         return login(email, pass);
 
     } catch (error: any) {

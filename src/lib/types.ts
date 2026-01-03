@@ -1,8 +1,10 @@
 
+
 export type UserRole = "Admin" | "HR" | "Employee";
+export type EmployeeUUID = string;
 
 export interface User {
-  id: string;
+  id: string; // This is the Firebase Auth UID
   name: string;
   email: string;
   role: UserRole;
@@ -12,7 +14,8 @@ export interface User {
 }
 
 export interface Employee {
-  employeeId: string;
+  id: EmployeeUUID; // This is the employee record's primary key (UUID) from the database
+  employeeId: string; // This is the human-readable ID like "DF001"
   department: string;
   position: string;
   dateOfJoining: string;
@@ -29,7 +32,7 @@ export type AttendanceStatus = "Present" | "Absent" | "Half-day" | "Leave";
 
 export interface AttendanceRecord {
   id: string;
-  employeeId: string;
+  employeeId: EmployeeUUID;
   date: string;
   status: AttendanceStatus;
   checkIn?: string;
@@ -41,7 +44,7 @@ export type LeaveStatus = "Pending" | "Approved" | "Rejected";
 
 export interface LeaveRequest {
   id: string;
-  employeeId: string;
+  employeeId: EmployeeUUID;
   employeeName: string;
   leaveType: LeaveType;
   startDate: string;

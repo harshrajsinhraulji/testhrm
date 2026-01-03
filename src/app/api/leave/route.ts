@@ -2,11 +2,10 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { z } from 'zod';
-import type { LeaveRequest, User } from '@/lib/types';
+import type { LeaveRequest, EmployeeUUID } from '@/lib/types';
 
 const leaveRequestSchema = z.object({
-  employeeId: z.string(),
-  employeeName: z.string(),
+  employeeUuid: z.string().uuid(),
   leaveType: z.enum(["Paid", "Sick", "Unpaid", "Maternity"]),
   startDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "Invalid start date" }),
   endDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "Invalid end date" }),
@@ -16,7 +15,7 @@ const leaveRequestSchema = z.object({
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const employeeId = searchParams.get('employeeId');
+    const employeeId = searchParams.get('employeeId'); // This is the EmployeeUUID
 
     let query = `
       SELECT 
@@ -71,13 +70,13 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: 'Invalid input.', errors: validation.error.issues }, { status: 400 });
     }
 
-    const { employeeId, employeeName, leaveType, startDate, endDate, reason } = validation.data;
+    const { employeeUuid, leaveType, startDate, endDate, reason } = validation.data;
 
     const { rows } = await db.query(
       `INSERT INTO leave_requests (employee_id, leave_type, start_date, end_date, reason, status)
        VALUES ($1, $2, $3, $4, $5, 'Pending')
        RETURNING *`,
-      [employeeId, leaveType, startDate, endDate, reason]
+      [employeeUuid, leaveType, startDate, endDate, reason]
     );
 
     return NextResponse.json(rows[0], { status: 201 });
