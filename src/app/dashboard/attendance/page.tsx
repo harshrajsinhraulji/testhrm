@@ -1,5 +1,7 @@
+
 "use client";
 
+import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +25,7 @@ import { mockAttendance, mockEmployees } from "@/lib/data";
 import type { AttendanceRecord } from "@/lib/types";
 import { useAuth } from "@/hooks/use-auth";
 import { Clock } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const getStatusVariant = (status: AttendanceRecord['status']) => {
   switch (status) {
@@ -41,15 +44,61 @@ const getStatusVariant = (status: AttendanceRecord['status']) => {
 
 export default function AttendancePage() {
   const { user, role } = useAuth();
+  const { toast } = useToast();
   const today = new Date().toISOString().split("T")[0];
+  const [attendanceRecords, setAttendanceRecords] = useState(mockAttendance);
+
+  const todayUserRecord = attendanceRecords.find(a => a.employeeId === user?.employeeDetails?.employeeId && a.date === today);
+
+  const [isCheckedIn, setIsCheckedIn] = useState(!!(todayUserRecord && todayUserRecord.checkIn && !todayUserRecord.checkOut));
 
   const employeeAttendance = role === 'Admin' || role === 'HR'
-    ? mockAttendance.filter(a => a.date === today)
-    : mockAttendance.filter(a => a.employeeId === user?.employeeDetails?.employeeId && a.date === today);
-
+    ? attendanceRecords.filter(a => a.date === today)
+    : attendanceRecords.filter(a => a.employeeId === user?.employeeDetails?.employeeId);
+    
   const getEmployeeName = (employeeId: string) => {
-    return mockEmployees.find(e => e.employeeId === employeeId)?.name || 'Unknown';
+    return mockEmployees.find(e => e.employeeDetails?.employeeId === employeeId)?.name || 'Unknown';
   }
+
+  const handleCheckIn = () => {
+    if (!user?.employeeDetails?.employeeId) return;
+    
+    const newRecord: AttendanceRecord = {
+        id: `att-${Date.now()}`,
+        employeeId: user.employeeDetails.employeeId,
+        date: today,
+        status: 'Present',
+        checkIn: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+    };
+
+    setAttendanceRecords([newRecord, ...attendanceRecords]);
+    setIsCheckedIn(true);
+    toast({
+        title: "Checked In",
+        description: "Your attendance has been marked for today.",
+    });
+  };
+
+  const handleCheckOut = () => {
+    if (!user?.employeeDetails?.employeeId || !todayUserRecord) return;
+    
+    const updatedRecords = attendanceRecords.map(rec => {
+        if (rec.id === todayUserRecord.id) {
+            return { 
+                ...rec, 
+                checkOut: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) 
+            };
+        }
+        return rec;
+    });
+
+    setAttendanceRecords(updatedRecords);
+    setIsCheckedIn(false);
+    toast({
+        title: "Checked Out",
+        description: "Have a great day!",
+    });
+  };
 
   return (
     <div>
@@ -57,10 +106,16 @@ export default function AttendancePage() {
         title="Attendance"
         description="Track and manage employee attendance."
       >
-        <div className="flex items-center gap-2">
-            <Button>Check In</Button>
-            <Button variant="outline">Check Out</Button>
-        </div>
+        {role === 'Employee' && (
+             <div className="flex items-center gap-2">
+                <Button onClick={handleCheckIn} disabled={isCheckedIn || !!todayUserRecord}>
+                    Check In
+                </Button>
+                <Button onClick={handleCheckOut} variant="outline" disabled={!isCheckedIn}>
+                    Check Out
+                </Button>
+            </div>
+        )}
       </PageHeader>
       
       <Tabs defaultValue="daily">
@@ -73,7 +128,7 @@ export default function AttendancePage() {
             <CardHeader>
               <CardTitle>Today's Attendance</CardTitle>
               <CardDescription>
-                A summary of attendance for {new Date(today).toDateString()}.
+                A summary of attendance for {new Date().toDateString()}.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -128,3 +183,5 @@ export default function AttendancePage() {
     </div>
   );
 }
+
+    
