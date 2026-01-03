@@ -65,7 +65,8 @@ export interface PaySlip {
 }
 
 export interface SalaryStructure {
-  employeeId: string;
+  employeeId: string; // This is the human-readable ID like "DF001"
+  employeeName?: string; // Name of the employee
   basicSalary: number;
   hra: number;
   otherAllowances: number;
