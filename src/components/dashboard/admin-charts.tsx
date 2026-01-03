@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Bar, BarChart, XAxis, YAxis, ResponsiveContainer } from "recharts";
+import { Bar, BarChart, XAxis, YAxis, ResponsiveContainer, Cell } from "recharts";
 import {
   Card,
   CardContent,
@@ -13,10 +13,54 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  type ChartConfig
 } from "@/components/ui/chart";
 import { useEffect, useMemo, useState } from "react";
 import type { User } from "@/lib/types";
 import { Skeleton } from "../ui/skeleton";
+
+const chartConfig = {
+  count: {
+    label: "Employees",
+  },
+  Engineering: {
+    label: "Engineering",
+    color: "hsl(var(--chart-1))",
+  },
+  Product: {
+    label: "Product",
+    color: "hsl(var(--chart-2))",
+  },
+  Design: {
+    label: "Design",
+    color: "hsl(var(--chart-3))",
+  },
+  Sales: {
+    label: "Sales",
+    color: "hsl(var(--chart-4))",
+  },
+  Marketing: {
+    label: "Marketing",
+    color: "hsl(var(--chart-5))",
+  },
+  "Human Resources": {
+    label: "Human Resources",
+    color: "hsl(var(--chart-2))",
+  },
+  Finance: {
+    label: "Finance",
+    color: "hsl(var(--chart-3))",
+  },
+  "Customer Support": {
+    label: "Customer Support",
+    color: "hsl(var(--chart-4))",
+  },
+   Unassigned: {
+    label: "Unassigned",
+    color: "hsl(var(--muted))",
+  },
+} satisfies ChartConfig;
+
 
 export function AdminCharts() {
   const [employees, setEmployees] = useState<User[]>([]);
@@ -71,12 +115,6 @@ export function AdminCharts() {
     }));
   }, [employees]);
 
-  const chartConfig = {
-    count: {
-      label: "Employees",
-      color: "hsl(var(--primary))",
-    },
-  };
 
   if (loading) {
     return (
@@ -86,7 +124,7 @@ export function AdminCharts() {
           <Skeleton className="h-4 w-3/4" />
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[250px] w-full" />
+          <Skeleton className="h-[200px] w-full" />
         </CardContent>
       </Card>
     );
@@ -103,7 +141,7 @@ export function AdminCharts() {
       <CardContent>
         <ChartContainer
           config={chartConfig}
-          className="min-h-[250px] w-full"
+          className="min-h-[200px] w-full"
         >
           <BarChart
             accessibilityLayer
@@ -127,7 +165,11 @@ export function AdminCharts() {
               cursor={false}
               content={<ChartTooltipContent hideLabel />}
             />
-            <Bar dataKey="count" fill="var(--color-count)" radius={5} />
+            <Bar dataKey="count" radius={5}>
+                {departmentData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={`var(--color-${entry.department.replace(/\s/g, "")})`} />
+                ))}
+            </Bar>
           </BarChart>
         </ChartContainer>
       </CardContent>
