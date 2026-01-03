@@ -21,6 +21,7 @@ import { AlertCircle, Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+  employeeId: z.string().min(1, { message: "Employee ID is required." }),
   email: z.string().email({
     message: "Please enter a valid email address.",
   }),
@@ -39,6 +40,7 @@ export function SignupForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
+      employeeId: "",
       email: "",
       password: "",
     },
@@ -48,7 +50,7 @@ export function SignupForm() {
     setLoading(true);
     setError(null);
     try {
-      const user = await signup(values.name, values.email, values.password);
+      const user = await signup(values.name, values.email, values.password, values.employeeId);
       if (user) {
         router.push("/dashboard");
       } else {
@@ -79,6 +81,19 @@ export function SignupForm() {
               <FormLabel>Full Name</FormLabel>
               <FormControl>
                 <Input placeholder="John Doe" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="employeeId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Employee ID</FormLabel>
+              <FormControl>
+                <Input placeholder="DF001" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
