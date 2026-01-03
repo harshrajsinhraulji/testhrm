@@ -30,6 +30,7 @@ export function EmployeeRoster() {
             role: item.role,
             avatarUrl: item.avatar_url,
             employeeDetails: {
+                id: item.id, // Ensure the UUID is also here
                 employeeId: item.employee_id,
                 department: item.department,
                 position: item.position,
@@ -41,7 +42,7 @@ export function EmployeeRoster() {
             }
         }));
         setEmployees(users);
-      } catch (err: any) {
+      } catch (err: any) -> {
         setError(err.message);
       } finally {
         setLoading(false);
