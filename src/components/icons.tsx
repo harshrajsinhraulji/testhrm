@@ -3,15 +3,26 @@ import type { SVGProps } from 'react';
 export function DayflowLogo(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
-      viewBox="0 0 70 24"
-      fill="none"
+      viewBox="0 0 140 28"
+      width="140"
+      height="28"
       xmlns="http://www.w3.org/2000/svg"
       {...props}
     >
-      <path
-        d="M11.5977 12.0322C11.5977 15.0161 9.0129 17.4312 5.79885 17.4312C2.5848 17.4312 0 15.0161 0 12.0322C0 9.04828 2.5848 6.63324 5.79885 6.63324C9.0129 6.63324 11.5977 9.04828 11.5977 12.0322ZM21.9015 11.7552C21.9015 8.92276 24.5243 6.63324 27.8142 6.63324C31.1041 6.63324 33.7269 8.92276 33.7269 11.7552C33.7269 14.5876 31.1041 16.8771 27.8142 16.8771C24.5243 16.8771 21.9015 14.5876 21.9015 11.7552ZM45.3248 11.7552C45.3248 8.92276 47.9476 6.63324 51.2375 6.63324C54.5274 6.63324 57.1502 8.92276 57.1502 11.7552C57.1502 14.5876 54.5274 16.8771 51.2375 16.8771C47.9476 16.8771 45.3248 14.5876 45.3248 11.7552Z"
-        fill="currentColor"
-      />
+      <style>{`
+        .dayflow-d { fill: hsl(var(--primary)); }
+        .dayflow-rest { fill: hsl(var(--foreground)); }
+      `}</style>
+      <text
+        x="0"
+        y="24"
+        fontFamily="var(--font-poppins), sans-serif"
+        fontSize="28"
+        fontWeight="700"
+      >
+        <tspan className="dayflow-d">D</tspan>
+        <tspan className="dayflow-rest">ayflow</tspan>
+      </text>
     </svg>
   );
 }
