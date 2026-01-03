@@ -85,7 +85,7 @@ export default function ProfilePage() {
             <CardContent className="pt-6 flex flex-col items-center text-center">
               <div className="relative mb-4">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={user.avatarUrl} alt={user.name} />
+                  <AvatarImage src={user.avatarUrl} alt={user.name} className="object-cover" />
                   <AvatarFallback>{user.name[0]}</AvatarFallback>
                 </Avatar>
                 <input
@@ -144,4 +144,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
