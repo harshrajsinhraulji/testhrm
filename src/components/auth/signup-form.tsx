@@ -20,32 +20,7 @@ import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-
-// Mock data for dropdowns, same as in profile-form
-const departments = [
-  "Engineering",
-  "Product",
-  "Design",
-  "Sales",
-  "Marketing",
-  "Human Resources",
-  "Finance",
-  "Customer Support",
-];
-
-const positions = [
-  "Software Engineer",
-  "Senior Software Engineer",
-  "Product Manager",
-  "UX/UI Designer",
-  "Sales Development Representative",
-  "Marketing Manager",
-  "HR Generalist",
-  "Accountant",
-  "Customer Support Specialist",
-  "Team Lead",
-];
-
+import { departments, positionsByDepartment } from "@/lib/departments-config";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -75,6 +50,8 @@ export function SignupForm() {
       password: "",
     },
   });
+
+  const selectedDepartment = form.watch("department");
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
@@ -137,7 +114,13 @@ export function SignupForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Department</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select 
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  form.resetField("position");
+                }} 
+                defaultValue={field.value}
+              >
                   <FormControl>
                       <SelectTrigger>
                           <SelectValue placeholder="Select a department" />
@@ -160,14 +143,14 @@ export function SignupForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Position</FormLabel>
-               <Select onValueChange={field.onChange} defaultValue={field.value}>
+               <Select onValueChange={field.onChange} value={field.value} disabled={!selectedDepartment}>
               <FormControl>
                   <SelectTrigger>
-                  <SelectValue placeholder="Select a position" />
+                  <SelectValue placeholder={!selectedDepartment ? "Select a department first" : "Select a position"} />
                   </SelectTrigger>
               </FormControl>
               <SelectContent>
-                  {positions.map(pos => (
+                  {selectedDepartment && positionsByDepartment[selectedDepartment]?.map(pos => (
                       <SelectItem key={pos} value={pos}>{pos}</SelectItem>
                   ))}
               </SelectContent>

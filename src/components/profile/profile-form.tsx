@@ -27,6 +27,7 @@ import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "../ui/separator";
 import type { User } from "@/lib/types";
+import { departments, positionsByDepartment } from "@/lib/departments-config";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name is too short"),
@@ -40,31 +41,6 @@ const profileSchema = z.object({
   department: z.string().optional(),
   position: z.string().optional(),
 });
-
-// Mock data for dropdowns
-const departments = [
-  "Engineering",
-  "Product",
-  "Design",
-  "Sales",
-  "Marketing",
-  "Human Resources",
-  "Finance",
-  "Customer Support",
-];
-
-const positions = [
-  "Software Engineer",
-  "Senior Software Engineer",
-  "Product Manager",
-  "UX/UI Designer",
-  "Sales Development Representative",
-  "Marketing Manager",
-  "HR Generalist",
-  "Accountant",
-  "Customer Support Specialist",
-  "Team Lead",
-];
 
 interface ProfileFormProps {
     employee?: User | null; // Make employee optional
@@ -123,11 +99,14 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
         return;
     }
     
+    // Omit department and position from the payload sent to the PATCH endpoint
+    const { department, position, ...updatePayload } = values;
+
     try {
         const res = await fetch(`/api/employees/${userToEdit.employeeDetails.id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(values),
+            body: JSON.stringify(updatePayload),
         });
 
         if (!res.ok) {
@@ -271,10 +250,10 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
                                 <FormControl>
                                     <SelectTrigger>
                                     <SelectValue placeholder="Select a position" />
-                                    </SelectTrigger>
+                                    </Trigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {positions.map(pos => (
+                                    {userToEdit?.employeeDetails?.department && positionsByDepartment[userToEdit.employeeDetails.department]?.map(pos => (
                                         <SelectItem key={pos} value={pos}>{pos}</SelectItem>
                                     ))}
                                 </SelectContent>
