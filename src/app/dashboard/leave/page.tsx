@@ -52,6 +52,7 @@ export default function LeavePage() {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
+  const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
   const { toast } = useToast();
 
   const fetchLeaveRequests = useCallback(async () => {
@@ -99,6 +100,7 @@ export default function LeavePage() {
   
   const handleViewDetails = (request: LeaveRequest) => {
     setSelectedRequest(request);
+    setIsDetailViewOpen(true);
   };
 
   return (
@@ -199,7 +201,7 @@ export default function LeavePage() {
         </CardContent>
       </Card>
       
-       <Dialog open={!!selectedRequest} onOpenChange={(open) => !open && setSelectedRequest(null)}>
+       <Dialog open={isDetailViewOpen} onOpenChange={setIsDetailViewOpen}>
         <DialogContent className="sm:max-w-md">
             <DialogHeader>
                 <DialogTitle>Leave Request Details</DialogTitle>
