@@ -2,6 +2,20 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/components/providers/auth-provider';
 import { Toaster } from '@/components/ui/toaster';
+import { Inter, Space_Grotesk } from 'next/font/google';
+import { cn } from '@/lib/utils';
+
+const fontInter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+});
+
+const fontSpaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-space-grotesk',
+});
+
 
 export const metadata: Metadata = {
   title: 'Dayflow HR',
@@ -15,15 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="light" style={{ colorScheme: 'light' }}>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="font-body">
+      <body className={cn('font-body antialiased', fontInter.variable, fontSpaceGrotesk.variable)}>
         <AuthProvider>
           {children}
           <Toaster />

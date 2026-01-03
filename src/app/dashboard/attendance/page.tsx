@@ -26,19 +26,20 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { AttendanceStreak } from "@/components/attendance/attendance-streak";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
-const getStatusVariant = (status: AttendanceRecord['status']) => {
+const getStatusClasses = (status: AttendanceRecord['status']) => {
   switch (status) {
     case "Present":
-      return "default";
+      return "bg-[#DCFCE7] text-[#16A34A] border-[#16A34A]/20";
     case "Absent":
-      return "destructive";
+      return "bg-[#FEE2E2] text-[#DC2626] border-[#DC2626]/20";
     case "Half-day":
-      return "secondary";
+      return "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20";
     case "Leave":
-      return "outline";
+      return "bg-blue-100 text-blue-800 border-blue-800/20";
     default:
-      return "default";
+      return "bg-slate-100 text-slate-800";
   }
 };
 
@@ -174,7 +175,7 @@ export default function AttendancePage() {
                       <TableRow key={record.id}>
                         {role !== 'Employee' && <TableCell className="font-medium">{getEmployeeName(record.employeeId)}</TableCell>}
                         <TableCell>
-                          <Badge variant={getStatusVariant(record.status)} className={record.status === "Present" ? "bg-emerald-500 text-white" : ""}>
+                          <Badge className={cn("border", getStatusClasses(record.status))}>
                             {record.status}
                           </Badge>
                         </TableCell>

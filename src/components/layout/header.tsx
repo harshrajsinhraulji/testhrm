@@ -18,7 +18,7 @@ export function AppHeader() {
   const title = getPageTitle(pathname);
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-card px-4 sm:h-auto sm:border-b sm:bg-card sm:px-6">
        <SidebarTrigger className="sm:hidden" />
 
        <div className="relative ml-auto flex-1 md:grow-0">

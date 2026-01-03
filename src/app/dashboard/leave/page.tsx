@@ -39,16 +39,18 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
-const getStatusVariant = (status: LeaveStatus) => {
+const getStatusClasses = (status: LeaveStatus) => {
   switch (status) {
     case 'Approved':
-      return 'default';
+      return "bg-[#DCFCE7] text-[#16A34A] border-[#16A34A]/20";
     case 'Rejected':
-      return 'destructive';
+      return "bg-[#FEE2E2] text-[#DC2626] border-[#DC2626]/20";
     case 'Pending':
+      return "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20";
     default:
-      return 'secondary';
+      return 'bg-slate-100 text-slate-800';
   }
 };
 
@@ -181,7 +183,7 @@ export default function LeavePage() {
                         {new Date(request.endDate).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getStatusVariant(request.status)}>
+                        <Badge className={cn("border font-medium", getStatusClasses(request.status))}>
                           {request.status}
                         </Badge>
                       </TableCell>
@@ -273,7 +275,7 @@ export default function LeavePage() {
               <div className="grid grid-cols-2 gap-2">
                 <div className="font-medium text-muted-foreground">Status</div>
                 <div>
-                  <Badge variant={getStatusVariant(selectedRequest.status)}>
+                  <Badge className={cn("border", getStatusClasses(selectedRequest.status))}>
                     {selectedRequest.status}
                   </Badge>
                 </div>
