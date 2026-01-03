@@ -116,6 +116,7 @@ export default function LeavePage() {
 
   const handleViewDetailsClick = (request: LeaveRequest) => {
     setSelectedRequest(request);
+    setIsDetailViewOpen(true);
   };
 
   return (
@@ -142,105 +143,105 @@ export default function LeavePage() {
           </DialogContent>
         </Dialog>
       </PageHeader>
-      <Dialog>
-        <Card>
-          <CardHeader>
-            <CardTitle>Your Leave History</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {role !== 'Employee' && <TableHead>Employee</TableHead>}
-                    <TableHead>Leave Type</TableHead>
-                    <TableHead>Dates</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {leaveRequests.length > 0 ? (
-                    leaveRequests.map((request: LeaveRequest) => (
-                      <TableRow key={request.id}>
-                        {role !== 'Employee' && (
-                          <TableCell className="font-medium">
-                            {request.employeeName}
-                          </TableCell>
-                        )}
-                        <TableCell>{request.leaveType}</TableCell>
-                        <TableCell>
-                          {new Date(request.startDate).toLocaleDateString()} -{' '}
-                          {new Date(request.endDate).toLocaleDateString()}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Your Leave History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {role !== 'Employee' && <TableHead>Employee</TableHead>}
+                  <TableHead>Leave Type</TableHead>
+                  <TableHead>Dates</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {leaveRequests.length > 0 ? (
+                  leaveRequests.map((request: LeaveRequest) => (
+                    <TableRow key={request.id}>
+                      {role !== 'Employee' && (
+                        <TableCell className="font-medium">
+                          {request.employeeName}
                         </TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusVariant(request.status)}>
-                            {request.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DialogTrigger asChild>
-                                <DropdownMenuItem
-                                  onClick={() => handleViewDetailsClick(request)}
-                                >
-                                  View Details
-                                </DropdownMenuItem>
-                              </DialogTrigger>
-                              {(role === 'Admin' || role === 'HR') &&
-                                request.status === 'Pending' && (
-                                  <>
-                                    <DropdownMenuItem
-                                      className="text-green-600 focus:text-green-600"
-                                      onClick={() =>
-                                        handleStatusUpdate(request.id, 'Approved')
-                                      }
-                                    >
-                                      Approve
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      className="text-red-600 focus:text-red-600"
-                                      onClick={() =>
-                                        handleStatusUpdate(request.id, 'Rejected')
-                                      }
-                                    >
-                                      Reject
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={role !== 'Employee' ? 5 : 4}
-                        className="h-24 text-center"
-                      >
-                        No leave requests found.
+                      )}
+                      <TableCell>{request.leaveType}</TableCell>
+                      <TableCell>
+                        {new Date(request.startDate).toLocaleDateString()} -{' '}
+                        {new Date(request.endDate).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusVariant(request.status)}>
+                          {request.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => handleViewDetailsClick(request)}
+                            >
+                              View Details
+                            </DropdownMenuItem>
+                            {(role === 'Admin' || role === 'HR') &&
+                              request.status === 'Pending' && (
+                                <>
+                                  <DropdownMenuItem
+                                    className="text-green-600 focus:text-green-600"
+                                    onClick={() =>
+                                      handleStatusUpdate(request.id, 'Approved')
+                                    }
+                                  >
+                                    Approve
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-red-600 focus:text-red-600"
+                                    onClick={() =>
+                                      handleStatusUpdate(request.id, 'Rejected')
+                                    }
+                                  >
+                                    Reject
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={role !== 'Employee' ? 5 : 4}
+                      className="h-24 text-center"
+                    >
+                      No leave requests found.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+      
+      <Dialog open={isDetailViewOpen} onOpenChange={setIsDetailViewOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Leave Request Details</DialogTitle>
