@@ -51,6 +51,7 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [loading, setLoading] = React.useState(false);
+  const [date, setDate] = React.useState<DateRange | undefined>(undefined);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -59,17 +60,31 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
     }
   });
 
-  // Get the date range value from the form
-  const date = form.watch("dateRange");
+  React.useEffect(() => {
+    if (date) {
+      form.setValue('dateRange', date as { from: Date; to: Date; }, { shouldValidate: true });
+    }
+  }, [date, form]);
+
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
     // Simulate API call
     setTimeout(() => {
+        if (!user?.employeeDetails?.employeeId) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Could not identify employee. Please log in again.",
+            });
+            setLoading(false);
+            return;
+        }
+
         mockLeaveRequests.unshift({
             id: `leave-${Date.now()}`,
-            employeeId: user!.employeeDetails!.employeeId,
-            employeeName: user!.name,
+            employeeId: user.employeeDetails.employeeId,
+            employeeName: user.name,
             leaveType: values.leaveType,
             startDate: values.dateRange.from.toISOString(),
             endDate: values.dateRange.to.toISOString(),
@@ -146,11 +161,12 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
-                    mode="range"
-                    selected={date}
-                    onSelect={field.onChange}
-                    numberOfMonths={2}
                     initialFocus
+                    mode="range"
+                    defaultMonth={date?.from}
+                    selected={date}
+                    onSelect={setDate}
+                    numberOfMonths={2}
                   />
                 </PopoverContent>
               </Popover>
