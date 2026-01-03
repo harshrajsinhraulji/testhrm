@@ -38,31 +38,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
 
   const login = async (email: string, pass: string): Promise<User | null> => {
-    // This will be replaced with a real API call
-    if (email === 'admin@dayflow.com' && pass === 'admin') {
-      const adminUser: User = {
-        id: 'user-1',
-        name: 'Sarah Chen',
-        email: 'admin@dayflow.com',
-        role: 'Admin',
-        avatarUrl: 'https://picsum.photos/seed/sarah/100/100',
-      };
-      setUser(adminUser);
-      setStoredUser(adminUser);
-      return adminUser;
-    }
-    if (email === 'user@dayflow.com' && pass === 'user') {
-      const employeeUser: User = {
-        id: 'user-2',
-        name: 'Mike Rivera',
-        email: 'user@dayflow.com',
-        role: 'Employee',
-        avatarUrl: 'https://picsum.photos/seed/mike/100/100',
-      };
-      setUser(employeeUser);
-      setStoredUser(employeeUser);
-      return employeeUser;
-    }
+    // This will be replaced with a real API call.
+    // For now, it will not log anyone in as mock data is removed.
+    console.log("Login attempt - will be implemented with API call");
     return null;
   };
 
