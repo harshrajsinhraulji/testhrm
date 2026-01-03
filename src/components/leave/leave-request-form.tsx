@@ -77,12 +77,13 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
     }
   });
 
-  const { startDate, endDate } = form.watch();
+  const { watch } = form;
+  const startDate = watch("startDate");
+  const endDate = watch("endDate");
 
   const calculateLeaveDays = () => {
-    if (startDate && endDate) {
-      // +1 to make the count inclusive of the start and end dates
-      const days = differenceInDays(endDate, startDate) + 1;
+    if (formData?.startDate && formData?.endDate) {
+      const days = differenceInDays(formData.endDate, formData.startDate) + 1;
       return days > 0 ? days : 0;
     }
     return 0;
@@ -97,6 +98,7 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
     if (!formData) return;
     setLoading(true);
 
+    // Simulate API call for adding to mock data
     setTimeout(() => {
         if (!user?.employeeDetails?.employeeId) {
             toast({
@@ -108,6 +110,7 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
             return;
         }
 
+        // Prepend to the mock data array
         mockLeaveRequests.unshift({
             id: `leave-${Date.now()}`,
             employeeId: user.employeeDetails.employeeId,
@@ -126,6 +129,7 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
         setLoading(false);
         setIsConfirmOpen(false);
         setOpen(false);
+        form.reset();
     }, 1000);
   };
 
@@ -180,7 +184,7 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start" onPointerDownOutside={(e) => e.preventDefault()}>
+                    <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
                         selected={field.value}
@@ -215,7 +219,7 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start" onPointerDownOutside={(e) => e.preventDefault()}>
+                    <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
                         selected={field.value}
@@ -257,7 +261,9 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
             <AlertDialogTitle>Confirm Leave Request</AlertDialogTitle>
             <AlertDialogDescription>
               You are requesting a leave of absence for{" "}
-              <span className="font-bold">{calculateLeaveDays()}</span> day(s). 
+              <span className="font-bold">{calculateLeaveDays()}</span> day(s) from{" "}
+              <span className="font-bold">{formData?.startDate ? format(formData.startDate, "PPP") : ""}</span> to{" "}
+              <span className="font-bold">{formData?.endDate ? format(formData.endDate, "PPP") : ""}</span>.
               Please confirm that you want to submit this request.
             </AlertDialogDescription>
           </AlertDialogHeader>
