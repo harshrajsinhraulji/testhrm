@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,7 +29,11 @@ const formSchema = z.object({
   }),
 });
 
-export function LoginForm() {
+interface LoginFormProps {
+  isAdminLogin?: boolean;
+}
+
+export function LoginForm({ isAdminLogin = false }: LoginFormProps) {
   const { login } = useAuth();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +53,11 @@ export function LoginForm() {
     try {
       const user = await login(values.email, values.password);
       if (user) {
+        // If it's an admin login page, only allow admins.
+        if (isAdminLogin && user.role !== 'Admin') {
+          setError("You do not have permission to access this page.");
+          return;
+        }
         router.push("/dashboard");
       } else {
         setError("Invalid credentials. Please check your email and password.");

@@ -44,76 +44,7 @@ const generateMockAttendance = (employeeId: string, joinDate: string): Attendanc
 }
 
 
-export const mockEmployees: (User & { employeeDetails: Employee, password?: string })[] = [
-  {
-    id: 'user-1',
-    name: 'Sarah Chen',
-    email: 'admin@dayflow.com',
-    password: 'admin',
-    role: 'Admin',
-    avatarUrl: 'https://picsum.photos/seed/sarah/100/100',
-    employeeDetails: {
-      employeeId: 'DF001',
-      department: 'Management',
-      position: 'HR Manager',
-      dateOfJoining: '2020-01-15',
-      contactNumber: '123-456-7890',
-      address: '123 Tech Avenue, Silicon Valley, CA',
-      emergencyContact: { name: 'John Chen', relationship: 'Spouse', phone: '111-222-3333' }
-    }
-  },
-  {
-    id: 'user-2',
-    name: 'Mike Rivera',
-    email: 'user@dayflow.com',
-    password: 'user',
-    role: 'Employee',
-    avatarUrl: 'https://picsum.photos/seed/mike/100/100',
-    employeeDetails: {
-      employeeId: 'DF002',
-      department: 'Engineering',
-      position: 'Frontend Developer',
-      dateOfJoining: '2023-06-01',
-      contactNumber: '098-765-4321',
-      address: '456 Code Lane, San Francisco, CA',
-      emergencyContact: { name: 'Maria Rivera', relationship: 'Sister', phone: '444-555-6666' }
-    }
-  },
-  {
-    id: 'user-3',
-    name: 'Emily Carter',
-    email: 'emily.carter@dayflow.com',
-    password: 'password123',
-    role: 'Employee',
-    avatarUrl: 'https://picsum.photos/seed/emily/100/100',
-    employeeDetails: {
-      employeeId: 'DF003',
-      department: 'Design',
-      position: 'UI/UX Designer',
-      dateOfJoining: '2023-09-20',
-      contactNumber: '555-666-7777',
-      address: '789 Pixel Road, Oakland, CA',
-      emergencyContact: { name: 'David Carter', relationship: 'Brother', phone: '888-999-0000' }
-    }
-  },
-  {
-    id: 'user-4',
-    name: 'David Lee',
-    email: 'david.lee@dayflow.com',
-    password: 'password123',
-    role: 'HR',
-    avatarUrl: 'https://picsum.photos/seed/david/100/100',
-    employeeDetails: {
-      employeeId: 'DF004',
-      department: 'HR',
-      position: 'HR Specialist',
-      dateOfJoining: '2023-02-10',
-      contactNumber: '222-333-4444',
-      address: '321 People St, San Jose, CA',
-      emergencyContact: { name: 'Sophia Lee', relationship: 'Wife', phone: '111-333-5555' }
-    }
-  }
-];
+export const mockEmployees: (User & { employeeDetails: Employee, password?: string })[] = [];
 
 export const mockUsers: User[] = mockEmployees.map(({ employeeDetails, password, ...user }) => user);
 

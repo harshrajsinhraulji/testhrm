@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,6 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import React from "react";
 import { mockLeaveRequests } from "@/lib/data";
 import { useAuth } from "@/hooks/use-auth";
+import type { DateRange } from "react-day-picker";
 
 const formSchema = z.object({
   leaveType: z.enum(["Paid", "Sick", "Unpaid", "Maternity"], {
@@ -49,6 +51,11 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [loading, setLoading] = React.useState(false);
+  const [date, setDate] = React.useState<DateRange | undefined>({
+    from: undefined,
+    to: undefined,
+  });
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -120,17 +127,17 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
                       variant={"outline"}
                       className={cn(
                         "w-full pl-3 text-left font-normal",
-                        !field.value?.from && "text-muted-foreground"
+                        !date?.from && "text-muted-foreground"
                       )}
                     >
-                      {field.value?.from ? (
-                        field.value.to ? (
+                      {date?.from ? (
+                        date.to ? (
                           <>
-                            {format(field.value.from, "LLL dd, y")} -{" "}
-                            {format(field.value.to, "LLL dd, y")}
+                            {format(date.from, "LLL dd, y")} -{" "}
+                            {format(date.to, "LLL dd, y")}
                           </>
                         ) : (
-                          format(field.value.from, "LLL dd, y")
+                          format(date.from, "LLL dd, y")
                         )
                       ) : (
                         <span>Pick a date range</span>
@@ -142,8 +149,13 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="range"
-                    selected={{ from: field.value?.from, to: field.value?.to }}
-                    onSelect={field.onChange}
+                    selected={date}
+                    onSelect={(range) => {
+                      setDate(range);
+                      if (range) {
+                        field.onChange(range);
+                      }
+                    }}
                     numberOfMonths={2}
                     initialFocus
                   />

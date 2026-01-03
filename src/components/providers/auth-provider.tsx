@@ -1,8 +1,8 @@
+
 "use client";
 
 import { AuthContext } from "@/hooks/use-auth";
 import type { User, UserRole } from "@/lib/types";
-import { mockEmployees, mockUsers } from "@/lib/data";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 
@@ -38,46 +38,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
 
   const login = async (email: string, pass: string): Promise<User | null> => {
-    const foundUser = mockEmployees.find((u) => u.email === email && u.password === pass);
-    if (foundUser) {
-      const { password, ...userToStore } = foundUser;
-      setUser(userToStore);
-      setStoredUser(userToStore);
-      return userToStore;
+    // This will be replaced with a real API call
+    if (email === 'admin@dayflow.com' && pass === 'admin') {
+      const adminUser: User = {
+        id: 'user-1',
+        name: 'Sarah Chen',
+        email: 'admin@dayflow.com',
+        role: 'Admin',
+        avatarUrl: 'https://picsum.photos/seed/sarah/100/100',
+      };
+      setUser(adminUser);
+      setStoredUser(adminUser);
+      return adminUser;
+    }
+    if (email === 'user@dayflow.com' && pass === 'user') {
+      const employeeUser: User = {
+        id: 'user-2',
+        name: 'Mike Rivera',
+        email: 'user@dayflow.com',
+        role: 'Employee',
+        avatarUrl: 'https://picsum.photos/seed/mike/100/100',
+      };
+      setUser(employeeUser);
+      setStoredUser(employeeUser);
+      return employeeUser;
     }
     return null;
   };
 
   const signup = async (name: string, email: string, pass: string, employeeId: string, role: UserRole): Promise<User | null> => {
-    const existingUser = mockUsers.find((u) => u.email === email || u.employeeDetails?.employeeId === employeeId);
-    if (existingUser) {
+    try {
+        const response = await fetch('/api/auth/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password: pass, employeeId, role }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Signup failed');
+        }
+
+        const newUser: User = await response.json();
+        setUser(newUser);
+        setStoredUser(newUser);
+        return newUser;
+    } catch (error) {
+        console.error("Signup error:", error);
         return null;
     }
-    const newUser: User = {
-        id: `user-${Date.now()}`,
-        name,
-        email,
-        role: role,
-        avatarUrl: `https://picsum.photos/seed/${name.split(' ')[0]}/100/100`,
-        employeeDetails: {
-            employeeId: employeeId,
-            department: "Unassigned",
-            position: "New Hire",
-            dateOfJoining: new Date().toISOString(),
-            contactNumber: "",
-            address: "",
-            emergencyContact: {
-                name: "",
-                relationship: "",
-                phone: ""
-            }
-        }
-    };
-    mockEmployees.push({ ...newUser, password: pass } as any);
-    mockUsers.push(newUser);
-    setUser(newUser);
-    setStoredUser(newUser);
-    return newUser;
   };
 
   const logout = () => {

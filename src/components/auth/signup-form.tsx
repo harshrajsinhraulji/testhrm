@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,7 +31,7 @@ const formSchema = z.object({
   password: z.string().min(8, {
     message: "Password must be at least 8 characters.",
   }),
-  role: z.enum(["Employee", "HR", "Admin"], { required_error: "Please select a role."}),
+  role: z.enum(["Employee", "HR"], { required_error: "Please select a role."}),
 });
 
 export function SignupForm() {
@@ -60,8 +61,8 @@ export function SignupForm() {
       } else {
         setError("An account with this email or Employee ID already exists.");
       }
-    } catch (e) {
-        setError("An unexpected error occurred. Please try again.");
+    } catch (e: any) {
+        setError(e.message || "An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -119,7 +120,6 @@ export function SignupForm() {
                     <SelectContent>
                         <SelectItem value="Employee">Employee</SelectItem>
                         <SelectItem value="HR">HR</SelectItem>
-                        <SelectItem value="Admin">Admin</SelectItem>
                     </SelectContent>
                 </Select>
                 <FormMessage />
