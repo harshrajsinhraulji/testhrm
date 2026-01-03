@@ -14,7 +14,7 @@ export default {
       fontFamily: {
         sans: ['var(--font-inter)', ...fontFamily.sans],
         body: ['var(--font-inter)', ...fontFamily.sans],
-        headline: ['var(--font-space-grotesk)', ...fontFamily.sans],
+        headline: ['var(--font-poppins)', ...fontFamily.sans],
         mono: ['var(--font-inter)', ...fontFamily.mono],
       },
       colors: {

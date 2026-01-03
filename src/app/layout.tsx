@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/components/providers/auth-provider';
 import { Toaster } from '@/components/ui/toaster';
-import { Inter, Space_Grotesk } from 'next/font/google';
+import { Inter, Poppins } from 'next/font/google';
 import { cn } from '@/lib/utils';
 
 const fontInter = Inter({
@@ -10,10 +10,10 @@ const fontInter = Inter({
   variable: '--font-inter',
 });
 
-const fontSpaceGrotesk = Space_Grotesk({
+const fontPoppins = Poppins({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
-  variable: '--font-space-grotesk',
+  variable: '--font-poppins',
 });
 
 
@@ -29,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="light" style={{ colorScheme: 'light' }}>
-      <body className={cn('font-body antialiased', fontInter.variable, fontSpaceGrotesk.variable)}>
+      <body className={cn('font-body antialiased', fontInter.variable, fontPoppins.variable)}>
         <AuthProvider>
           {children}
           <Toaster />

@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%; /* slate-50 */
-    --foreground: 222 47% 11%; /* slate-900 */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
@@ -13,7 +13,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 224 76% 58%; /* blue-600 */
+    --primary: 320 20% 37%; /* Odoo-like purple */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 26% 95%; /* slate-100 */
@@ -22,19 +22,19 @@
     --muted: 220 26% 95%; /* slate-100 */
     --muted-foreground: 225 16% 41%; /* slate-600 */
 
-    --accent: 228 88% 97%; /* blue-50 */
-    --accent-foreground: 224 76% 58%;
+    --accent: 320 20% 95%; /* Lighter purple for accents */
+    --accent-foreground: 320 20% 37%;
 
-    --destructive: 0 84% 60%; /* red-500, but let's use the requested one */
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 220 13% 91%; /* slate-200 */
     --input: 220 13% 91%;
-    --ring: 224 76% 58%;
+    --ring: 320 20% 37%;
 
     --radius: 0.5rem;
 
-    --chart-1: 224 76% 58%;
+    --chart-1: 320 20% 37%;
     --chart-2: 160 76% 40%;
     --chart-3: 35 91% 55%;
     --chart-4: 280 65% 60%;
@@ -51,7 +51,7 @@
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 217 91% 60%;
+    --primary: 320 20% 67%;
     --primary-foreground: 222 47% 11%;
 
     --secondary: 217 33% 17%;
@@ -68,9 +68,9 @@
 
     --border: 217 33% 17%;
     --input: 217 33% 17%;
-    --ring: 217 91% 60%;
+    --ring: 320 20% 67%;
 
-    --chart-1: 217 91% 60%;
+    --chart-1: 320 20% 67%;
     --chart-2: 160 76% 40%;
     --chart-3: 35 91% 55%;
     --chart-4: 280 65% 60%;
