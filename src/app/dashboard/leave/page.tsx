@@ -29,9 +29,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useState, useEffect, useCallback } from "react";
 import { LeaveRequestForm } from "@/components/leave/leave-request-form";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 
 const getStatusVariant = (status: LeaveStatus) => {
   switch (status) {
@@ -50,6 +51,7 @@ export default function LeavePage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
   const { toast } = useToast();
 
   const fetchLeaveRequests = useCallback(async () => {
@@ -93,6 +95,10 @@ export default function LeavePage() {
     } catch(error: any) {
         toast({ variant: "destructive", title: "Error", description: error.message });
     }
+  };
+  
+  const handleViewDetails = (request: LeaveRequest) => {
+    setSelectedRequest(request);
   };
 
   return (
@@ -159,7 +165,7 @@ export default function LeavePage() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem>View Details</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleViewDetails(request)}>View Details</DropdownMenuItem>
                             {(role === 'Admin' || role === 'HR') && request.status === 'Pending' && (
                             <>
                                 <DropdownMenuItem 
@@ -192,6 +198,50 @@ export default function LeavePage() {
           )}
         </CardContent>
       </Card>
+      
+       <Dialog open={!!selectedRequest} onOpenChange={(open) => !open && setSelectedRequest(null)}>
+        <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+                <DialogTitle>Leave Request Details</DialogTitle>
+                <DialogDescription>
+                    Full details for the selected leave request.
+                </DialogDescription>
+            </DialogHeader>
+            {selectedRequest && (
+                <div className="space-y-4 text-sm">
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="font-medium text-muted-foreground">Employee</div>
+                        <div>{selectedRequest.employeeName}</div>
+                    </div>
+                     <div className="grid grid-cols-2 gap-2">
+                        <div className="font-medium text-muted-foreground">Leave Type</div>
+                        <div>{selectedRequest.leaveType}</div>
+                    </div>
+                     <div className="grid grid-cols-2 gap-2">
+                        <div className="font-medium text-muted-foreground">Dates</div>
+                        <div>
+                            {new Date(selectedRequest.startDate).toLocaleDateString()} - {new Date(selectedRequest.endDate).toLocaleDateString()}
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="font-medium text-muted-foreground">Status</div>
+                        <div><Badge variant={getStatusVariant(selectedRequest.status)}>{selectedRequest.status}</Badge></div>
+                    </div>
+                    <Separator />
+                     <div>
+                        <p className="font-medium text-muted-foreground mb-1">Reason provided by employee:</p>
+                        <p className="p-2 bg-muted rounded-md">{selectedRequest.reason}</p>
+                    </div>
+                     {selectedRequest.comments && (
+                        <div>
+                            <p className="font-medium text-muted-foreground mb-1">Admin Comments:</p>
+                            <p className="p-2 bg-muted rounded-md">{selectedRequest.comments}</p>
+                        </div>
+                    )}
+                </div>
+            )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
