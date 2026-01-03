@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -19,12 +20,13 @@ import {
 } from '@/components/ui/table';
 import { useAuth } from '@/hooks/use-auth';
 import type { LeaveRequest, LeaveStatus } from '@/lib/types';
-import { PlusCircle, MoreHorizontal } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Eye, Check, X, Pencil } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { useState, useEffect, useCallback } from 'react';
 import { LeaveRequestForm } from '@/components/leave/leave-request-form';
@@ -44,13 +46,13 @@ import { cn } from '@/lib/utils';
 const getStatusClasses = (status: LeaveStatus) => {
   switch (status) {
     case 'Approved':
-      return "bg-[#DCFCE7] text-[#16A34A] border-[#16A34A]/20";
+      return 'text-green-600 bg-green-50 border-green-200';
     case 'Rejected':
-      return "bg-[#FEE2E2] text-[#DC2626] border-[#DC2626]/20";
+      return 'text-red-600 bg-red-50 border-red-200';
     case 'Pending':
-      return "bg-[#FEF3C7] text-[#D97706] border-[#D97706]/20";
+      return 'text-amber-600 bg-amber-50 border-amber-200';
     default:
-      return 'bg-slate-100 text-slate-800';
+      return 'text-slate-600 bg-slate-50 border-slate-200';
   }
 };
 
@@ -59,9 +61,7 @@ export default function LeavePage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(
-    null
-  );
+  const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
   const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
   const { toast } = useToast();
 
@@ -122,127 +122,147 @@ export default function LeavePage() {
   };
 
   return (
-    <div>
-      <PageHeader
-        title="Leave Management"
-        description="Apply for leave and view the status of your requests."
-      >
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Apply for Leave
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>New Leave Request</DialogTitle>
-            </DialogHeader>
-            <LeaveRequestForm
-              setOpen={setIsFormOpen}
-              onFormSubmit={fetchLeaveRequests}
-            />
-          </DialogContent>
-        </Dialog>
-      </PageHeader>
+    <>
+      <div className="space-y-6">
+        <PageHeader
+          title="Leave Management"
+          description="Apply for leave, and view and manage requests."
+        >
+          {role === 'Employee' && (
+            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Apply for Leave
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[480px]">
+                <DialogHeader>
+                  <DialogTitle>New Leave Request</DialogTitle>
+                  <DialogDescription>
+                    Fill out the form below to request time off.
+                  </DialogDescription>
+                </DialogHeader>
+                <LeaveRequestForm
+                  setOpen={setIsFormOpen}
+                  onFormSubmit={fetchLeaveRequests}
+                />
+              </DialogContent>
+            </Dialog>
+          )}
+        </PageHeader>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Leave History</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {role !== 'Employee' && <TableHead>Employee</TableHead>}
-                  <TableHead>Leave Type</TableHead>
-                  <TableHead>Dates</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {leaveRequests.length > 0 ? (
-                  leaveRequests.map((request: LeaveRequest) => (
-                    <TableRow key={request.id}>
-                      {role !== 'Employee' && (
-                        <TableCell className="font-medium">
-                          {request.employeeName}
+        <Card>
+          <CardHeader>
+            <CardTitle>Leave History</CardTitle>
+            <CardDescription>
+              A record of all leave requests submitted.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {role !== 'Employee' && <TableHead>Employee</TableHead>}
+                    <TableHead>Leave Type</TableHead>
+                    <TableHead>Dates</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {leaveRequests.length > 0 ? (
+                    leaveRequests.map((request: LeaveRequest) => (
+                      <TableRow key={request.id}>
+                        {role !== 'Employee' && (
+                          <TableCell className="font-medium">
+                            {request.employeeName}
+                          </TableCell>
+                        )}
+                        <TableCell>{request.leaveType}</TableCell>
+                        <TableCell>
+                          {new Date(request.startDate).toLocaleDateString()} -{' '}
+                          {new Date(request.endDate).toLocaleDateString()}
                         </TableCell>
-                      )}
-                      <TableCell>{request.leaveType}</TableCell>
-                      <TableCell>
-                        {new Date(request.startDate).toLocaleDateString()} -{' '}
-                        {new Date(request.endDate).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={cn("border font-medium", getStatusClasses(request.status))}>
-                          {request.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => handleViewDetailsClick(request)}
-                            >
-                              View Details
-                            </DropdownMenuItem>
-                            {(role === 'Admin' || role === 'HR') &&
-                              request.status === 'Pending' && (
-                                <>
-                                  <DropdownMenuItem
-                                    className="text-green-600 focus:text-green-600"
-                                    onClick={() =>
-                                      handleStatusUpdate(request.id, 'Approved')
-                                    }
-                                  >
-                                    Approve
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-red-600 focus:text-red-600"
-                                    onClick={() =>
-                                      handleStatusUpdate(request.id, 'Rejected')
-                                    }
-                                  >
-                                    Reject
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              'font-medium',
+                              getStatusClasses(request.status)
+                            )}
+                          >
+                            {request.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => handleViewDetailsClick(request)}
+                              >
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Details
+                              </DropdownMenuItem>
+                              {(role === 'Admin' || role === 'HR') &&
+                                request.status === 'Pending' && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      className="text-green-600 focus:text-green-600"
+                                      onClick={() =>
+                                        handleStatusUpdate(request.id, 'Approved')
+                                      }
+                                    >
+                                      <Check className="mr-2 h-4 w-4" />
+                                      Approve
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="text-red-600 focus:text-red-600"
+                                      onClick={() =>
+                                        handleStatusUpdate(request.id, 'Rejected')
+                                      }
+                                    >
+                                      <X className="mr-2 h-4 w-4" />
+                                      Reject
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={role !== 'Employee' ? 5 : 4}
+                        className="h-24 text-center"
+                      >
+                        No leave requests found.
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={role !== 'Employee' ? 5 : 4}
-                      className="h-24 text-center"
-                    >
-                      No leave requests found.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-      
+                  )}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       <Dialog open={isDetailViewOpen} onOpenChange={setIsDetailViewOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -252,49 +272,53 @@ export default function LeavePage() {
             </DialogDescription>
           </DialogHeader>
           {selectedRequest && (
-            <div className="space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-medium text-muted-foreground">
-                  Employee
+            <div className="space-y-4 py-4 text-sm">
+              <dl className="grid gap-3">
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">Employee</dt>
+                  <dd className="font-medium">{selectedRequest.employeeName}</dd>
                 </div>
-                <div>{selectedRequest.employeeName}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-medium text-muted-foreground">
-                  Leave Type
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">Leave Type</dt>
+                  <dd className="font-medium">{selectedRequest.leaveType}</dd>
                 </div>
-                <div>{selectedRequest.leaveType}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-medium text-muted-foreground">Dates</div>
-                <div>
-                  {new Date(selectedRequest.startDate).toLocaleDateString()} -{' '}
-                  {new Date(selectedRequest.endDate).toLocaleDateString()}
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">Dates</dt>
+                  <dd className="font-medium">
+                    {new Date(selectedRequest.startDate).toLocaleDateString()} -{' '}
+                    {new Date(selectedRequest.endDate).toLocaleDateString()}
+                  </dd>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="font-medium text-muted-foreground">Status</div>
-                <div>
-                  <Badge className={cn("border", getStatusClasses(selectedRequest.status))}>
-                    {selectedRequest.status}
-                  </Badge>
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">Status</dt>
+                  <dd>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        'font-medium',
+                        getStatusClasses(selectedRequest.status)
+                      )}
+                    >
+                      {selectedRequest.status}
+                    </Badge>
+                  </dd>
                 </div>
-              </div>
+              </dl>
               <Separator />
-              <div>
-                <p className="font-medium text-muted-foreground mb-1">
-                  Reason provided by employee:
+              <div className="space-y-2">
+                <p className="font-medium text-muted-foreground">
+                  Reason
                 </p>
-                <p className="p-2 bg-muted rounded-md">
+                <p className="rounded-md border bg-muted/50 p-2">
                   {selectedRequest.reason}
                 </p>
               </div>
               {selectedRequest.comments && (
-                <div>
-                  <p className="font-medium text-muted-foreground mb-1">
-                    Admin Comments:
+                <div className="space-y-2">
+                  <p className="font-medium text-muted-foreground">
+                    Admin Comments
                   </p>
-                  <p className="p-2 bg-muted rounded-md">
+                  <p className="rounded-md border bg-muted/50 p-2">
                     {selectedRequest.comments}
                   </p>
                 </div>
@@ -303,6 +327,6 @@ export default function LeavePage() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

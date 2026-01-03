@@ -15,6 +15,7 @@ export default {
         sans: ['var(--font-inter)', ...fontFamily.sans],
         body: ['var(--font-inter)', ...fontFamily.sans],
         headline: ['var(--font-space-grotesk)', ...fontFamily.sans],
+        mono: ['var(--font-inter)', ...fontFamily.mono],
       },
       colors: {
         background: 'hsl(var(--background))',

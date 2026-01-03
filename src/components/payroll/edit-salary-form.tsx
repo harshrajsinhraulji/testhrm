@@ -30,11 +30,10 @@ type EditSalaryFormValues = z.infer<typeof formSchema>;
 
 interface EditSalaryFormProps {
   structure: SalaryStructure;
-  setOpen: (open: boolean) => void;
   onFormSubmit: () => void;
 }
 
-export function EditSalaryForm({ structure, setOpen, onFormSubmit }: EditSalaryFormProps) {
+export function EditSalaryForm({ structure, onFormSubmit }: EditSalaryFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
@@ -69,8 +68,7 @@ export function EditSalaryForm({ structure, setOpen, onFormSubmit }: EditSalaryF
         description: `Successfully updated salary for ${structure.employeeName}.`,
       });
 
-      onFormSubmit(); // Re-fetch data on the parent page
-      setOpen(false);
+      onFormSubmit(); // Re-fetch data and close dialog on the parent page
 
     } catch (error: any) {
         toast({
@@ -85,7 +83,7 @@ export function EditSalaryForm({ structure, setOpen, onFormSubmit }: EditSalaryF
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
         <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -142,10 +140,12 @@ export function EditSalaryForm({ structure, setOpen, onFormSubmit }: EditSalaryF
               )}
             />
         </div>
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Save Changes
-        </Button>
+        <div className="pt-4 flex justify-end">
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
+        </div>
       </form>
     </Form>
   );

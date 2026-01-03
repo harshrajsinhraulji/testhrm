@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
 import type { PaySlip, SalaryStructure } from "@/lib/types";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Pencil } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { EditSalaryForm } from "@/components/payroll/edit-salary-form";
 import Link from "next/link";
 
@@ -64,98 +64,125 @@ export default function PayrollPage() {
     if (user) {
       fetchPayrollData();
     }
-  }, [user, role]);
+  }, [user]);
 
   const handleEditClick = (structure: SalaryStructure) => {
     setSelectedStructure(structure);
     setIsFormOpen(true);
   };
 
+  const onFormSubmit = () => {
+    fetchPayrollData();
+    setIsFormOpen(false);
+  }
+
   const isAdminOrHR = role === "Admin" || role === "HR";
 
+  if (loading) {
+     return (
+        <div className="space-y-6">
+            <PageHeader
+                title="Payroll"
+                description={isAdminOrHR ? "View and manage employee salary details." : "View your payroll information and salary details."}
+            />
+             <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-48" />
+                    <Skeleton className="h-4 w-64" />
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-2">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+     )
+  }
+
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeader
         title="Payroll"
         description={isAdminOrHR ? "View and manage employee salary details." : "View your payroll information and salary details."}
       />
       {isAdminOrHR ? (
-         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <>
             <Card>
-            <CardHeader>
-                <CardTitle>Employee Salary Structures</CardTitle>
-                <CardDescription>View and manage salary details for all employees.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {loading ? (
-                <div className="space-y-4">
-                    {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-                </div>
-                ) : (
-                <Table>
-                    <TableHeader>
-                    <TableRow>
-                        <TableHead>Employee</TableHead>
-                        <TableHead>Basic Salary</TableHead>
-                        <TableHead>HRA</TableHead>
-                        <TableHead>PF</TableHead>
-                        <TableHead>Total CTC</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    {salaryStructures.length > 0 ? salaryStructures.map((structure) => (
-                        <TableRow key={structure.employeeId}>
-                        <TableCell className="font-medium">
-                            <div className="font-medium">{structure.employeeName}</div>
-                            <div className="text-xs text-muted-foreground">{structure.employeeId}</div>
-                        </TableCell>
-                        <TableCell>{formatCurrency(structure.basicSalary)}</TableCell>
-                        <TableCell>{formatCurrency(structure.hra)}</TableCell>
-                        <TableCell>{formatCurrency(structure.pf)}</TableCell>
-                        <TableCell>{formatCurrency(structure.basicSalary + structure.hra + structure.otherAllowances)}</TableCell>
-                        <TableCell className="text-right">
-                            <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleEditClick(structure)}>Edit Structure</DropdownMenuItem>
-                                <DropdownMenuItem disabled>View Payslips</DropdownMenuItem>
-                            </DropdownMenuContent>
-                            </DropdownMenu>
-                        </TableCell>
-                        </TableRow>
-                    )) : (
+                <CardHeader>
+                    <CardTitle>Employee Salary Structures</CardTitle>
+                    <CardDescription>View and manage salary details for all employees.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
                         <TableRow>
-                            <TableCell colSpan={6} className="h-24 text-center">
-                                No salary structures found.
-                            </TableCell>
+                            <TableHead>Employee</TableHead>
+                            <TableHead className="text-right">Basic Salary</TableHead>
+                            <TableHead className="text-right">HRA</TableHead>
+                            <TableHead className="text-right">PF</TableHead>
+                            <TableHead className="text-right">Total CTC</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
-                    )}
-                    </TableBody>
-                </Table>
-                )}
-            </CardContent>
+                        </TableHeader>
+                        <TableBody>
+                        {salaryStructures.length > 0 ? salaryStructures.map((structure) => (
+                            <TableRow key={structure.employeeId}>
+                                <TableCell>
+                                    <div className="font-medium">{structure.employeeName}</div>
+                                    <div className="text-xs text-muted-foreground">{structure.employeeId}</div>
+                                </TableCell>
+                                <TableCell className="text-right font-mono">{formatCurrency(structure.basicSalary)}</TableCell>
+                                <TableCell className="text-right font-mono">{formatCurrency(structure.hra)}</TableCell>
+                                <TableCell className="text-right font-mono">{formatCurrency(structure.pf)}</TableCell>
+                                <TableCell className="text-right font-mono">{formatCurrency(structure.basicSalary + structure.hra + structure.otherAllowances)}</TableCell>
+                                <TableCell className="text-right">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => handleEditClick(structure)}>
+                                                <Pencil className="mr-2 h-4 w-4" />
+                                                Edit Structure
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
+                            </TableRow>
+                        )) : (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-24 text-center">
+                                    No salary structures found.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
             </Card>
-             <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                    <DialogTitle>Edit Salary Structure</DialogTitle>
-                     <CardDescription>
-                        Editing for {selectedStructure?.employeeName} ({selectedStructure?.employeeId})
-                    </CardDescription>
-                </DialogHeader>
-                {selectedStructure && (
-                    <EditSalaryForm 
-                        structure={selectedStructure}
-                        setOpen={setIsFormOpen}
-                        onFormSubmit={fetchPayrollData} 
-                    />
-                )}
-            </DialogContent>
-         </Dialog>
+            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+                 <DialogContent className="sm:max-w-[480px]">
+                    <DialogHeader>
+                        <DialogTitle>Edit Salary Structure</DialogTitle>
+                        <DialogDescription>
+                            Editing for {selectedStructure?.employeeName} ({selectedStructure?.employeeId})
+                        </DialogDescription>
+                    </DialogHeader>
+                    {selectedStructure && (
+                        <EditSalaryForm 
+                            structure={selectedStructure}
+                            onFormSubmit={onFormSubmit} 
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
+        </>
       ) : (
         <Card>
           <CardHeader>
@@ -163,24 +190,19 @@ export default function PayrollPage() {
             <CardDescription>A history of your monthly salary statements.</CardDescription>
           </CardHeader>
           <CardContent>
-             {loading ? (
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-              </div>
-            ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Month</TableHead>
-                    <TableHead>Net Salary</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="text-right">Net Salary</TableHead>
+                    <TableHead className="w-[120px] text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paySlips.length > 0 ? paySlips.map((slip) => (
                     <TableRow key={slip.id}>
                       <TableCell className="font-medium">{slip.month} {slip.year}</TableCell>
-                      <TableCell>{formatCurrency(slip.netSalary)}</TableCell>
+                      <TableCell className="text-right font-mono">{formatCurrency(slip.netSalary)}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="outline" size="sm" asChild>
                             <Link href={`/dashboard/payroll/${slip.id}`}>View Details</Link>
@@ -196,7 +218,6 @@ export default function PayrollPage() {
                   )}
                 </TableBody>
               </Table>
-            )}
           </CardContent>
         </Card>
       )}
