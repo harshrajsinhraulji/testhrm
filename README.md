@@ -14,6 +14,23 @@ Welcome to **Dayflow**, a modern and intuitive HR management system built for th
 *   **Payroll Management:** Admins can manage salary structures, and employees can view and download their monthly payslips.
 *   **Role-Based Access Control:** A secure system that distinguishes between `Admin`, `HR`, and `Employee` roles, ensuring users only see what they need to.
 
+---
+
+## 🌐 Live Demo
+
+You can access a live demonstration of the application hosted on Vercel.
+
+**Link:** [https://dayflow-sable.vercel.app/](https://dayflow-sable.vercel.app/)
+
+### Admin Access
+
+To explore the administrator dashboard, please use the following credentials:
+
+*   **Email:** `h.raulji2005@gmail.com`
+*   **Password:** `harsh123`
+
+---
+
 ## 🛠️ Tech Stack
 
 *   **Framework:** [Next.js](https://nextjs.org/) (React)
