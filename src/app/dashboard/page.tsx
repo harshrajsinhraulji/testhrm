@@ -1,12 +1,15 @@
+
 "use client";
 
 import { StatsCards } from "@/components/dashboard/stats-cards";
 import { EmployeeRoster } from "@/components/dashboard/employee-roster";
 import { RecentLeaveRequests } from "@/components/dashboard/recent-leave-requests";
-import { EmployeeDashboardCards } from "@/components/dashboard/employee-dashboard-cards";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
+import { AdminCharts } from "@/components/dashboard/admin-charts";
+import { EmployeeCharts } from "@/components/dashboard/employee-charts";
+
 
 const getWelcomeContent = (role: string | null, name?: string) => {
     switch (role) {
@@ -36,6 +39,7 @@ export default function DashboardPage() {
       {isAdminOrHR ? (
         <>
           <StatsCards />
+          <AdminCharts />
           <div className="grid gap-6 lg:grid-cols-5">
             <Card className="lg:col-span-3">
               <CardHeader>
@@ -59,7 +63,7 @@ export default function DashboardPage() {
           </div>
         </>
       ) : (
-        <EmployeeDashboardCards />
+        <EmployeeCharts />
       )}
     </div>
   );
