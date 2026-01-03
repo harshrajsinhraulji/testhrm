@@ -1,5 +1,7 @@
+
 "use client";
 
+import { useRef, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,10 +15,60 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
-import { Camera } from "lucide-react";
+import { Camera, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const { toast } = useToast();
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePictureChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user?.employeeDetails?.id) return;
+
+    setIsUploading(true);
+
+    // Convert image to data URI
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      try {
+        const res = await fetch(`/api/employees/${user.employeeDetails.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatarUrl: dataUrl }),
+        });
+
+        if (!res.ok) throw new Error("Failed to upload image.");
+
+        await refreshUser();
+        toast({
+          title: "Profile Picture Updated",
+          description: "Your new avatar has been saved.",
+        });
+
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Upload Failed",
+          description: error.message,
+        });
+      } finally {
+        setIsUploading(false);
+      }
+    };
+    reader.onerror = () => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to read file.",
+      });
+      setIsUploading(false);
+    };
+  };
 
   if (!user) return null;
 
@@ -36,8 +88,21 @@ export default function ProfilePage() {
                   <AvatarImage src={user.avatarUrl} alt={user.name} />
                   <AvatarFallback>{user.name[0]}</AvatarFallback>
                 </Avatar>
-                <Button variant="outline" size="icon" className="absolute bottom-0 right-0 rounded-full h-8 w-8">
-                    <Camera className="h-4 w-4" />
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handlePictureChange}
+                  className="hidden"
+                  accept="image/png, image/jpeg, image/gif"
+                />
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="absolute bottom-0 right-0 rounded-full h-8 w-8"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                >
+                    {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                     <span className="sr-only">Change picture</span>
                 </Button>
               </div>
@@ -79,3 +144,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+

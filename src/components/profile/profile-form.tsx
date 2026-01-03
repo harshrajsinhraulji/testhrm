@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "../ui/separator";
 
@@ -53,6 +53,22 @@ export function ProfileForm() {
     },
   });
 
+  useEffect(() => {
+    if (user) {
+        form.reset({
+            name: user.name || "",
+            email: user.email || "",
+            contactNumber: user.employeeDetails?.contactNumber || "",
+            address: user.employeeDetails?.address || "",
+            emergencyContactName: user.employeeDetails?.emergencyContact.name || "",
+            emergencyContactRelationship: user.employeeDetails?.emergencyContact.relationship || "",
+            emergencyContactPhone: user.employeeDetails?.emergencyContact.phone || "",
+            department: user.employeeDetails?.department || "",
+            position: user.employeeDetails?.position || "",
+        });
+    }
+  }, [user, form]);
+
   async function onSubmit(values: z.infer<typeof profileSchema>) {
     setLoading(true);
     if (!user?.employeeDetails?.id) {
@@ -75,11 +91,7 @@ export function ProfileForm() {
         if (!res.ok) {
             throw new Error("Failed to update profile.");
         }
-
-        // The API returns the updated user object
-        const updatedUser = await res.json();
         
-        // Refresh the user context with the new data
         await refreshUser();
 
         toast({

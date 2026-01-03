@@ -9,6 +9,7 @@ const employeeUpdateSchema = z.object({
   emergencyContactName: z.string().min(2, "Name is too short").optional(),
   emergencyContactRelationship: z.string().min(2, "Relationship is too short").optional(),
   emergencyContactPhone: z.string().min(10, "Invalid phone number").optional(),
+  avatarUrl: z.string().url().or(z.string().startsWith("data:image/")).optional(),
   // Admin-only fields
   name: z.string().min(2, "Name is too short").optional(),
   department: z.string().optional(),
@@ -32,7 +33,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     const { 
         contactNumber, address, emergencyContactName, 
         emergencyContactRelationship, emergencyContactPhone, 
-        name, department, position 
+        name, department, position, avatarUrl
     } = validation.data;
     
     // Dynamically build the update query based on the fields provided
@@ -48,6 +49,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if (emergencyContactPhone) { fieldsToUpdate.push(`emergency_contact_phone = $${queryIndex++}`); values.push(emergencyContactPhone); }
     if (department) { fieldsToUpdate.push(`department = $${queryIndex++}`); values.push(department); }
     if (position) { fieldsToUpdate.push(`position = $${queryIndex++}`); values.push(position); }
+    if (avatarUrl) { fieldsToUpdate.push(`avatar_url = $${queryIndex++}`); values.push(avatarUrl); }
 
     if (fieldsToUpdate.length === 0) {
       return NextResponse.json({ message: 'No fields to update' }, { status: 400 });
