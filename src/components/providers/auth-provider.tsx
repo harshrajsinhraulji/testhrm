@@ -1,107 +1,114 @@
 "use client";
 
 import { AuthContext } from "@/hooks/use-auth";
-import { mockUsers, getEmployeeDataForUser } from "@/lib/data";
 import type { User } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
+import { 
+  useFirebase, 
+  useUser, 
+  setDocumentNonBlocking,
+  useDoc,
+  useMemoFirebase,
+} from "@/firebase";
+import { 
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+} from "firebase/auth";
+import { doc } from 'firebase/firestore';
+
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { auth, firestore } = useFirebase();
+  const { user: firebaseUser, isUserLoading } = useUser();
   const router = useRouter();
 
+  const userDocRef = useMemoFirebase(
+    () => (firestore && firebaseUser ? doc(firestore, 'employees', firebaseUser.uid) : null),
+    [firestore, firebaseUser]
+  );
+  const { data: userRecord, isLoading: isUserRecordLoading } = useDoc<User>(userDocRef);
+
+  const [user, setUser] = useState<User | null>(null);
+
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem("dayflowUser");
-      if (storedUser) {
-        const parsedUser: User = JSON.parse(storedUser);
-        const fullUserData = getEmployeeDataForUser(parsedUser.id);
-        setUser(fullUserData);
+    if (!isUserLoading && !isUserRecordLoading) {
+      if (firebaseUser && userRecord) {
+        setUser({
+          id: firebaseUser.uid,
+          email: firebaseUser.email || '',
+          name: userRecord.name,
+          role: userRecord.role,
+          avatarUrl: userRecord.avatarUrl,
+          employeeDetails: userRecord.employeeDetails,
+        });
+      } else {
+        setUser(null);
       }
-    } catch (error) {
-      console.error("Failed to parse user from localStorage", error);
-      localStorage.removeItem("dayflowUser");
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  }, [firebaseUser, userRecord, isUserLoading, isUserRecordLoading]);
+
 
   const login = async (email: string, pass: string): Promise<User | null> => {
-    setLoading(true);
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    const foundUser = mockUsers.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase()
-    );
-
-    // In a real app, you'd also check the password hash
-    if (foundUser) {
-      const fullUserData = getEmployeeDataForUser(foundUser.id);
-      if (fullUserData) {
-        setUser(fullUserData);
-        localStorage.setItem("dayflowUser", JSON.stringify(fullUserData));
-        setLoading(false);
-        return fullUserData;
-      }
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      return user;
+    } catch (error) {
+      console.error("Login failed:", error);
+      return null;
     }
-    
-    setLoading(false);
-    return null;
   };
 
   const signup = async (name: string, email: string, pass: string): Promise<User | null> => {
-    setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    const existingUser = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (existingUser) {
-        setLoading(false);
-        return null; // User already exists
-    }
-
-    const newUser: User = {
-        id: `user-${Date.now()}`,
-        name,
-        email,
-        role: "Employee",
-        avatarUrl: "https://picsum.photos/seed/newuser/100/100",
-        employeeDetails: {
-            employeeId: `EMP-${Date.now()}`,
-            department: "Unassigned",
-            position: "New Hire",
-            dateOfJoining: new Date().toISOString(),
-            contactNumber: "",
-            address: "",
-            emergencyContact: {
-                name: "",
-relationship: "",
-                phone: ""
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+        const newUser: User = {
+            id: userCredential.user.uid,
+            name,
+            email,
+            role: "Employee",
+            avatarUrl: `https://picsum.photos/seed/${name.split(' ')[0]}/100/100`,
+            employeeDetails: {
+                employeeId: `EMP-${Date.now()}`,
+                department: "Unassigned",
+                position: "New Hire",
+                dateOfJoining: new Date().toISOString(),
+                contactNumber: "",
+                address: "",
+                emergencyContact: {
+                    name: "",
+                    relationship: "",
+                    phone: ""
+                }
             }
+        };
+
+        if (firestore) {
+          const userDoc = doc(firestore, 'employees', newUser.id);
+          setDocumentNonBlocking(userDoc, newUser, {});
         }
-    };
-    
-    // In a real app, you would save this to your database
-    mockUsers.push(newUser); 
-    
-    setUser(newUser);
-    localStorage.setItem("dayflowUser", JSON.stringify(newUser));
-    setLoading(false);
-    return newUser;
+
+        return newUser;
+    } catch (error) {
+        console.error("Signup failed:", error);
+        return null;
+    }
   };
 
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("dayflowUser");
-    router.push("/login");
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   const value = {
     user,
     role: user?.role ?? null,
-    loading,
+    loading: isUserLoading || isUserRecordLoading,
     login,
     logout,
     signup,
