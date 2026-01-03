@@ -14,8 +14,43 @@ const salaryStructureUpdateSchema = z.object({
   pf: z.number().min(0),
 });
 
+// Mock table for pay slips as it's not in the provided schema
+const createPaySlipsTable = async () => {
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS pay_slips (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+            month VARCHAR(20) NOT NULL,
+            year INT NOT NULL,
+            basic_salary NUMERIC(12, 2) NOT NULL,
+            allowances NUMERIC(12, 2) NOT NULL,
+            deductions NUMERIC(12, 2) NOT NULL,
+            net_salary NUMERIC(12, 2) NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+    `);
+};
+
+// Mock table for salary structures as it's not in the provided schema
+const createSalaryStructuresTable = async () => {
+    await db.query(`
+        CREATE TABLE IF NOT EXISTS salary_structures (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            employee_id UUID NOT NULL UNIQUE REFERENCES employees(id) ON DELETE CASCADE,
+            basic_salary NUMERIC(12, 2) NOT NULL DEFAULT 0,
+            hra NUMERIC(10, 2) NOT NULL DEFAULT 0,
+            other_allowances NUMERIC(10, 2) NOT NULL DEFAULT 0,
+            pf NUMERIC(10, 2) NOT NULL DEFAULT 0
+        );
+    `);
+};
+
+
 export async function GET(req: Request) {
   try {
+    await createSalaryStructuresTable();
+    await createPaySlipsTable();
+
     const { searchParams } = new URL(req.url);
     const employeeId = searchParams.get('employeeId'); // Employee DB UUID
 
@@ -79,6 +114,7 @@ export async function GET(req: Request) {
 
 export async function PATCH(req: Request) {
     try {
+        await createSalaryStructuresTable();
         const body = await req.json();
         const validation = salaryStructureUpdateSchema.safeParse(body);
 

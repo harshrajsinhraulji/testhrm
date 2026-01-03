@@ -27,7 +27,7 @@ export async function GET(req: Request) {
         lr.end_date, 
         lr.reason, 
         lr.status, 
-        lr.comments
+        lr.admin_comments
       FROM leave_requests lr
       JOIN employees e ON lr.employee_id = e.id
     `;
@@ -51,7 +51,7 @@ export async function GET(req: Request) {
       endDate: new Date(row.end_date).toISOString().split('T')[0],
       reason: row.reason,
       status: row.status,
-      comments: row.comments,
+      comments: row.admin_comments,
     }));
 
     return NextResponse.json(leaveRequests);
