@@ -30,6 +30,7 @@ import {
 import { useState } from "react";
 import { LeaveRequestForm } from "@/components/leave/leave-request-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
 const getStatusVariant = (status: LeaveStatus) => {
   switch (status) {
@@ -46,10 +47,24 @@ const getStatusVariant = (status: LeaveStatus) => {
 export default function LeavePage() {
   const { user, role } = useAuth();
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>(mockLeaveRequests);
+  const { toast } = useToast();
+
+  const handleStatusUpdate = (id: string, status: LeaveStatus) => {
+    setLeaveRequests(currentRequests =>
+      currentRequests.map(req =>
+        req.id === id ? { ...req, status: status } : req
+      )
+    );
+    toast({
+      title: `Request ${status}`,
+      description: `The leave request has been successfully ${status.toLowerCase()}.`,
+    });
+  };
 
   const leaveData = role === 'Admin' || role === 'HR'
-    ? mockLeaveRequests
-    : mockLeaveRequests.filter(req => req.employeeId === user?.employeeDetails?.employeeId);
+    ? leaveRequests
+    : leaveRequests.filter(req => req.employeeId === user?.employeeDetails?.employeeId);
 
   return (
     <div>
@@ -113,8 +128,18 @@ export default function LeavePage() {
                         <DropdownMenuItem>View Details</DropdownMenuItem>
                         {(role === 'Admin' || role === 'HR') && request.status === 'Pending' && (
                           <>
-                            <DropdownMenuItem className="text-green-600 focus:text-green-600">Approve</DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600 focus:text-red-600">Reject</DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-green-600 focus:text-green-600"
+                              onClick={() => handleStatusUpdate(request.id, 'Approved')}
+                            >
+                              Approve
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-red-600 focus:text-red-600"
+                              onClick={() => handleStatusUpdate(request.id, 'Rejected')}
+                            >
+                              Reject
+                            </DropdownMenuItem>
                           </>
                         )}
                       </DropdownMenuContent>
