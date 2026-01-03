@@ -5,6 +5,7 @@ import { AuthContext } from "@/hooks/use-auth";
 import type { User, UserRole } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 // Helper to get/set user from localStorage
 const getStoredUser = (): User | null => {
@@ -55,6 +56,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
 
   const login = async (email: string, pass: string): Promise<User | null> => {
+    // Hardcoded admin login for testing
+    if (email === 'admin@dayflow.com' && pass === 'admin') {
+      const adminAvatar = PlaceHolderImages.find(img => img.id === 'admin-avatar');
+      const adminUser: User = {
+        id: 'admin-user-static',
+        name: 'Sarah Chen (Admin)',
+        email: 'admin@dayflow.com',
+        role: 'Admin',
+        avatarUrl: adminAvatar?.imageUrl || 'https://placehold.co/100x100',
+        employeeDetails: {
+          employeeId: 'DF-ADMIN',
+          department: 'Management',
+          position: 'System Administrator',
+          dateOfJoining: '2022-01-01',
+          contactNumber: '123-456-7890',
+          address: '123 Admin Way, Tech City',
+          emergencyContact: {
+            name: 'Admin Support',
+            relationship: 'Support',
+            phone: '098-765-4321',
+          },
+        }
+      };
+      setUser(adminUser);
+      setStoredUser(adminUser);
+      setStoredToken('static-admin-token'); // Use a static token for the mock user
+      return adminUser;
+    }
+
+    // Dynamic login for all other users
     try {
         const response = await fetch('/api/auth/login', {
             method: 'POST',
@@ -91,14 +122,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         const newUser: User = await response.json();
-        // After signup, we don't have a token yet, so we should guide user to login.
-        // For a better UX, the signup could also return a token. For now, we just prepare for login.
-        // Or we can log them in directly. Let's try logging them in.
+        // After signup, log them in directly.
         return login(email, pass);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Signup error:", error);
-        return null;
+        throw error;
     }
   };
 
