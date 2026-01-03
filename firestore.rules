@@ -1,0 +1,134 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * Core Philosophy: This ruleset enforces a strict user-ownership model,
+     * treating each authenticated user as an "employee" with exclusive access
+     * to their own data. The employee's unique Firebase Auth UID is expected to
+     * match the {employeeId} document ID in the path. This approach provides
+     * a secure-by-default posture for sensitive HR data.
+     *
+     * Data Structure: All employee-specific data is hierarchically organized under
+     * the path /employees/{employeeId}. This includes the employee's main
+     * profile and their private subcollections for attendance, leave requests,
+     * and payroll information.
+     *
+     * Key Security Decisions:
+     * - Employee ID as User ID: The {employeeId} in the path is treated as the
+     *   user's Firebase Auth UID (`request.auth.uid`), directly linking data
+     *   ownership to authentication.
+     * - No User Enumeration: Listing the top-level /employees collection is
+     *   explicitly disallowed to prevent any user from discovering the
+     *   identities of all other employees in the system.
+     * - Admin/HR Roles: This ruleset does not implement admin or HR roles.
+     *   It provides a foundation of strict employee self-service. A future
+     *   enhancement would be to add a roles system (e.g., via custom claims or
+     *   a separate roles collection) to grant privileged access.
+     * - Relational Integrity: On document creation, rules ensure that any
+     *   internal `employeeId` field matches the {employeeId} from the path,
+     *   preventing data from being mis-associated.
+     */
+
+    // ----------------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user's UID matches the provided userId.
+     * This is the primary function for verifying document ownership.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+    * Checks for ownership on an existing document. Used for update and delete
+    * operations to ensure the target document exists before the operation.
+    */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    // ----------------------------------------------------------------------
+    // Collection Rules
+    // ----------------------------------------------------------------------
+
+    /**
+     * @description Manages employee profile documents. Each employee can create,
+     * read, update, and delete their own profile. Listing all employees is forbidden.
+     * @path /employees/{employeeId}
+     * @allow (get) An authenticated user with UID 'emp123' reading their own profile at /employees/emp123.
+     * @allow (create) A new user with UID 'emp456' creating their own profile at /employees/emp456.
+     * @deny (list) Any user attempting to list all documents in the /employees collection.
+     * @deny (get) A user 'emp123' attempting to read the profile of 'emp456'.
+     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     */
+    match /employees/{employeeId} {
+      allow get: if isOwner(employeeId);
+      allow list: if false;
+      allow create: if isOwner(employeeId) && request.resource.data.id == employeeId;
+      allow update: if isExistingOwner(employeeId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(employeeId);
+
+      /**
+       * @description Manages an employee's attendance records. Only the employee
+       * who owns the records can create, read, update, or delete them.
+       * @path /employees/{employeeId}/attendanceRecords/{attendanceRecordId}
+       * @allow (list) User 'emp123' listing all their records at /employees/emp123/attendanceRecords.
+       * @allow (create) User 'emp123' creating a new record in their own subcollection.
+       * @deny (get) User 'emp456' trying to read an attendance record for user 'emp123'.
+       * @principle Enforces document ownership for all operations within a user's private subcollection.
+       */
+      match /attendanceRecords/{attendanceRecordId} {
+        allow get: if isOwner(employeeId);
+        allow list: if isOwner(employeeId);
+        allow create: if isOwner(employeeId) && request.resource.data.employeeId == employeeId;
+        allow update: if isExistingOwner(employeeId) && request.resource.data.employeeId == resource.data.employeeId;
+        allow delete: if isExistingOwner(employeeId);
+      }
+
+      /**
+       * @description Manages an employee's leave requests. Only the employee
+       * who submitted the requests can manage them.
+       * @path /employees/{employeeId}/leaveRequests/{leaveRequestId}
+       * @allow (list) User 'emp123' listing all their leave requests at /employees/emp123/leaveRequests.
+       * @allow (create) User 'emp123' creating a new leave request in their own subcollection.
+       * @deny (update) User 'emp456' trying to modify a leave request for user 'emp123'.
+       * @principle Validates relational integrity by ensuring the internal 'employeeId' field matches the path.
+       */
+      match /leaveRequests/{leaveRequestId} {
+        allow get: if isOwner(employeeId);
+        allow list: if isOwner(employeeId);
+        allow create: if isOwner(employeeId) && request.resource.data.employeeId == employeeId;
+        allow update: if isExistingOwner(employeeId) && request.resource.data.employeeId == resource.data.employeeId;
+        allow delete: if isExistingOwner(employeeId);
+      }
+
+      /**
+       * @description Manages sensitive payroll information for an employee. Access is
+       * strictly limited to the employee who owns the data.
+       * @path /employees/{employeeId}/payrollInformation/{payrollInformationId}
+       * @allow (get) User 'emp123' viewing one of their payroll records.
+       * @allow (list) User 'emp123' listing all their historical payroll records.
+       * @deny (create) User 'emp456' attempting to create a payroll record for user 'emp123'.
+       * @deny (delete) Any user except the owner trying to delete a payroll record.
+       * @principle Enforces strict ownership for highly sensitive financial data.
+       */
+      match /payrollInformation/{payrollInformationId} {
+        allow get: if isOwner(employeeId);
+        allow list: if isOwner(employeeId);
+        allow create: if isOwner(employeeId) && request.resource.data.employeeId == employeeId;
+        allow update: if isExistingOwner(employeeId) && request.resource.data.employeeId == resource.data.employeeId;
+        allow delete: if isExistingOwner(employeeId);
+      }
+    }
+  }
+}

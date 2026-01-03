@@ -1,0 +1,280 @@
+{
+  "entities": {
+    "Employee": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Employee",
+      "type": "object",
+      "description": "Represents an employee within the organization.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the employee."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "First name of the employee."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "Last name of the employee."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the employee.",
+          "format": "email"
+        },
+        "jobTitle": {
+          "type": "string",
+          "description": "Job title of the employee."
+        },
+        "department": {
+          "type": "string",
+          "description": "Department the employee belongs to."
+        },
+        "contactNumber": {
+          "type": "string",
+          "description": "Contact number of the employee."
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "description": "Date of birth of the employee.",
+          "format": "date-time"
+        },
+        "hireDate": {
+          "type": "string",
+          "description": "Date when the employee was hired.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "jobTitle",
+        "department",
+        "hireDate"
+      ]
+    },
+    "AttendanceRecord": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AttendanceRecord",
+      "type": "object",
+      "description": "Represents an attendance record for an employee.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the attendance record."
+        },
+        "employeeId": {
+          "type": "string",
+          "description": "Reference to Employee. (Relationship: Employee 1:N AttendanceRecord)"
+        },
+        "checkInTime": {
+          "type": "string",
+          "description": "Time when the employee checked in.",
+          "format": "date-time"
+        },
+        "checkOutTime": {
+          "type": "string",
+          "description": "Time when the employee checked out.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the attendance (e.g., Present, Absent, Half-day, Leave)."
+        },
+        "date": {
+          "type": "string",
+          "description": "The date of the attendence record.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "employeeId",
+        "checkInTime",
+        "status",
+        "date"
+      ]
+    },
+    "LeaveRequest": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LeaveRequest",
+      "type": "object",
+      "description": "Represents a leave request submitted by an employee.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the leave request."
+        },
+        "employeeId": {
+          "type": "string",
+          "description": "Reference to Employee. (Relationship: Employee 1:N LeaveRequest)"
+        },
+        "leaveType": {
+          "type": "string",
+          "description": "Type of leave requested (e.g., Paid, Sick, Unpaid)."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "Start date of the leave.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "End date of the leave.",
+          "format": "date-time"
+        },
+        "remarks": {
+          "type": "string",
+          "description": "Remarks or reason for the leave request."
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the leave request (e.g., Pending, Approved, Rejected)."
+        },
+        "adminComments": {
+          "type": "string",
+          "description": "Comments added by the admin or HR officer."
+        }
+      },
+      "required": [
+        "id",
+        "employeeId",
+        "leaveType",
+        "startDate",
+        "endDate",
+        "status"
+      ]
+    },
+    "PayrollInformation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PayrollInformation",
+      "type": "object",
+      "description": "Represents payroll information for an employee.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the payroll information."
+        },
+        "employeeId": {
+          "type": "string",
+          "description": "Reference to Employee. (Relationship: Employee 1:N PayrollInformation)"
+        },
+        "salary": {
+          "type": "number",
+          "description": "Salary of the employee."
+        },
+        "deductions": {
+          "type": "number",
+          "description": "Total deductions from the salary."
+        },
+        "netSalary": {
+          "type": "number",
+          "description": "Net salary after deductions."
+        },
+        "paymentDate": {
+          "type": "string",
+          "description": "Date when the salary was paid.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "employeeId",
+        "salary",
+        "deductions",
+        "netSalary",
+        "paymentDate"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/employees/{employeeId}",
+        "definition": {
+          "entityName": "Employee",
+          "schema": {
+            "$ref": "#/backend/entities/Employee"
+          },
+          "description": "Stores employee profiles.  The 'employeeId' is the unique identifier for each employee.",
+          "params": [
+            {
+              "name": "employeeId",
+              "description": "The unique identifier of the employee."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/employees/{employeeId}/attendanceRecords/{attendanceRecordId}",
+        "definition": {
+          "entityName": "AttendanceRecord",
+          "schema": {
+            "$ref": "#/backend/entities/AttendanceRecord"
+          },
+          "description": "Stores attendance records for each employee.  The 'employeeId' links to the employee, and 'attendanceRecordId' is the unique identifier for each record.",
+          "params": [
+            {
+              "name": "employeeId",
+              "description": "The unique identifier of the employee."
+            },
+            {
+              "name": "attendanceRecordId",
+              "description": "The unique identifier of the attendance record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/employees/{employeeId}/leaveRequests/{leaveRequestId}",
+        "definition": {
+          "entityName": "LeaveRequest",
+          "schema": {
+            "$ref": "#/backend/entities/LeaveRequest"
+          },
+          "description": "Stores leave requests submitted by employees. The 'employeeId' links to the employee, and 'leaveRequestId' is the unique identifier for each request.",
+          "params": [
+            {
+              "name": "employeeId",
+              "description": "The unique identifier of the employee."
+            },
+            {
+              "name": "leaveRequestId",
+              "description": "The unique identifier of the leave request."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/employees/{employeeId}/payrollInformation/{payrollInformationId}",
+        "definition": {
+          "entityName": "PayrollInformation",
+          "schema": {
+            "$ref": "#/backend/entities/PayrollInformation"
+          },
+          "description": "Stores payroll information for each employee. The 'employeeId' links to the employee, and 'payrollInformationId' is the unique identifier for each payroll record.",
+          "params": [
+            {
+              "name": "employeeId",
+              "description": "The unique identifier of the employee."
+            },
+            {
+              "name": "payrollInformationId",
+              "description": "The unique identifier of the payroll information."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "Given the requirement to move away from Firebase Auth and Firestore, and towards a relational database (MySQL or Postgres), the following structure is recommended for a backend API that serves the Dayflow HR application. This structure focuses on relational database design principles, role-based access control, and API endpoint design.  The data structure is optimized for the core features outlined such as secure authentication, employee profile management, attendance tracking, leave management, and payroll visibility.\n\nGiven that the request specified NOT to use Firebase Authentication, I will specify database entities related to users, roles, and permissions as these are necessary for the application's functionality and security. However, I will exclude details on how these are handled in the Firebase Security Rules.\n\n**General Structure:**\nThe core entities (Employee, AttendanceRecord, LeaveRequest, and PayrollInformation) will be represented as tables in the relational database.  Foreign key relationships will be used to maintain data integrity and consistency. The API endpoints will be designed to perform CRUD (Create, Read, Update, Delete) operations on these entities, with authorization checks at each endpoint.\n\n**Detailed Explanation:**\n\n*   **Employees:** Employee data is stored in the `employees` table, including personal and job-related information. API endpoints will manage employee creation, retrieval, updates (with authorization to limit field edits), and deletion (admin only).\n\n*   **Attendance:** Attendance records are stored in the `attendance_records` table, linked to employees via `employeeId`. API endpoints will support creating attendance records (check-in/check-out), retrieving records (daily/weekly views), and updating records (admin only).\n\n*   **Leave Requests:** Leave requests are stored in the `leave_requests` table, also linked to employees via `employeeId`. API endpoints will allow employees to submit leave requests, admins to review and approve/reject requests, and all parties to view the status of requests.\n\n*   **Payroll:** Payroll information is stored in the `payroll_information` table, linked to employees.  API endpoints will allow employees to view their payroll and admins to manage payroll data.\n\n*   **Users, Roles, Permissions:** Additional tables (`users`, `roles`, `permissions`, `user_roles`, `role_permissions`) will manage user accounts, roles (Admin, HR, Employee), and permissions. API endpoints for authentication (sign-up/sign-in) and authorization checks will ensure role-based access control.  These elements address Authentication Independence by embedding all roles and permissions within the database itself. QAPs are supported via endpoint design, with specific endpoints for listing resources subject to authorization. For example, listing leave requests will be subject to checks based on the requesting user's role."
+  }
+}
