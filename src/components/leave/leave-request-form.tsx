@@ -25,7 +25,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { Calendar } from "../ui/calendar";
 import { cn } from "@/lib/utils";
-import { addDays, differenceInDays, format } from "date-fns";
+import { differenceInDays, format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
 import { mockLeaveRequests } from "@/lib/data";
@@ -188,7 +188,13 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent 
+                    className="w-auto p-0" 
+                    align="start"
+                    onInteractOutside={(e) => {
+                      e.preventDefault();
+                    }}
+                  >
                     <Calendar
                       initialFocus
                       mode="range"
