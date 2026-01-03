@@ -24,8 +24,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockAttendance, mockEmployees } from "@/lib/data";
 import type { AttendanceRecord } from "@/lib/types";
 import { useAuth } from "@/hooks/use-auth";
-import { Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { AttendanceStreak } from "@/components/attendance/attendance-streak";
 
 const getStatusVariant = (status: AttendanceRecord['status']) => {
   switch (status) {
@@ -108,10 +108,10 @@ export default function AttendancePage() {
       >
         {role === 'Employee' && (
              <div className="flex items-center gap-2">
-                <Button onClick={handleCheckIn} disabled={isCheckedIn || !!todayUserRecord}>
+                <Button onClick={handleCheckIn} disabled={isCheckedIn || !!todayUserRecord?.checkIn}>
                     Check In
                 </Button>
-                <Button onClick={handleCheckOut} variant="outline" disabled={!isCheckedIn}>
+                <Button onClick={handleCheckOut} variant="outline" disabled={!isCheckedIn || !!todayUserRecord?.checkOut}>
                     Check Out
                 </Button>
             </div>
@@ -121,7 +121,7 @@ export default function AttendancePage() {
       <Tabs defaultValue="daily">
         <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="daily">Daily View</TabsTrigger>
-          <TabsTrigger value="weekly">Weekly View</TabsTrigger>
+          <TabsTrigger value="weekly">Weekly Streak</TabsTrigger>
         </TabsList>
         <TabsContent value="daily">
           <Card>
@@ -168,14 +168,16 @@ export default function AttendancePage() {
         <TabsContent value="weekly">
         <Card>
             <CardHeader>
-              <CardTitle>Weekly Summary</CardTitle>
+              <CardTitle>Weekly Attendance Streak</CardTitle>
               <CardDescription>
-                Your weekly attendance summary is not yet available.
+                Your attendance summary for the last few weeks.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center h-60 text-center">
-                <Clock className="w-12 h-12 text-muted-foreground mb-4"/>
-                <p className="text-muted-foreground">Weekly view is currently in development.</p>
+            <CardContent>
+                <AttendanceStreak 
+                    employeeId={user?.employeeDetails.employeeId} 
+                    attendanceRecords={attendanceRecords}
+                />
             </CardContent>
           </Card>
         </TabsContent>
@@ -183,5 +185,3 @@ export default function AttendancePage() {
     </div>
   );
 }
-
-    

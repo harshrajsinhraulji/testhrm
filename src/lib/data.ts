@@ -1,4 +1,48 @@
+
 import type { User, Employee, AttendanceRecord, LeaveRequest, PaySlip, SalaryStructure } from './types';
+
+// Function to generate random attendance data for the last few months
+const generateMockAttendance = (employeeId: string, joinDate: string): AttendanceRecord[] => {
+  const records: AttendanceRecord[] = [];
+  const today = new Date();
+  let currentDate = new Date(joinDate);
+
+  while (currentDate <= today) {
+    const dayOfWeek = currentDate.getDay();
+    // No records for weekends
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      const chance = Math.random();
+      let status: 'Present' | 'Absent' | 'Half-day' | 'Leave' = 'Present';
+      let checkIn: string | undefined = '09:00 AM';
+      let checkOut: string | undefined = '05:00 PM';
+
+      if (chance < 0.05) { // 5% chance of being absent
+        status = 'Absent';
+        checkIn = undefined;
+        checkOut = undefined;
+      } else if (chance < 0.1) { // 5% chance of half-day
+        status = 'Half-day';
+        checkOut = '01:00 PM';
+      } else if (chance < 0.12) { // 2% chance of being on leave
+        status = 'Leave';
+        checkIn = undefined;
+        checkOut = undefined;
+      }
+      
+      records.push({
+        id: `att-${employeeId}-${records.length}`,
+        employeeId,
+        date: currentDate.toISOString().split('T')[0],
+        status,
+        checkIn,
+        checkOut,
+      });
+    }
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  return records;
+}
+
 
 export const mockEmployees: (User & { employeeDetails: Employee, password?: string })[] = [
   {
@@ -29,7 +73,7 @@ export const mockEmployees: (User & { employeeDetails: Employee, password?: stri
       employeeId: 'DF002',
       department: 'Engineering',
       position: 'Frontend Developer',
-      dateOfJoining: '2022-06-01',
+      dateOfJoining: '2023-06-01',
       contactNumber: '098-765-4321',
       address: '456 Code Lane, San Francisco, CA',
       emergencyContact: { name: 'Maria Rivera', relationship: 'Sister', phone: '444-555-6666' }
@@ -46,7 +90,7 @@ export const mockEmployees: (User & { employeeDetails: Employee, password?: stri
       employeeId: 'DF003',
       department: 'Design',
       position: 'UI/UX Designer',
-      dateOfJoining: '2021-09-20',
+      dateOfJoining: '2023-09-20',
       contactNumber: '555-666-7777',
       address: '789 Pixel Road, Oakland, CA',
       emergencyContact: { name: 'David Carter', relationship: 'Brother', phone: '888-999-0000' }
@@ -77,13 +121,9 @@ export const getEmployeeDataForUser = (userId: string): User | null => {
     return mockEmployees.find(emp => emp.id === userId) || null;
 }
 
-export const mockAttendance: AttendanceRecord[] = [
-  { id: 'att-1', employeeId: 'DF001', date: '2024-07-29', status: 'Present', checkIn: '09:05 AM', checkOut: '05:02 PM' },
-  { id: 'att-2', employeeId: 'DF002', date: '2024-07-29', status: 'Present', checkIn: '09:15 AM', checkOut: '05:30 PM' },
-  { id: 'att-3', employeeId: 'DF003', date: '2024-07-29', status: 'Leave', },
-  { id: 'att-4', employeeId: 'DF004', date: '2024-07-29', status: 'Present', checkIn: '08:58 AM', checkOut: '05:00 PM' },
-  { id: 'att-5', employeeId: 'DF002', date: '2024-07-28', status: 'Half-day', checkIn: '09:00 AM', checkOut: '01:00 PM' },
-];
+export let mockAttendance: AttendanceRecord[] = mockEmployees.flatMap(emp => 
+  generateMockAttendance(emp.employeeDetails.employeeId, emp.employeeDetails.dateOfJoining)
+);
 
 export const mockLeaveRequests: LeaveRequest[] = [
   { id: 'leave-1', employeeId: 'DF003', employeeName: 'Emily Carter', leaveType: 'Paid', startDate: '2024-07-29', endDate: '2024-07-30', reason: 'Family vacation', status: 'Approved' },
