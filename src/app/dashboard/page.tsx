@@ -2,7 +2,7 @@
 "use client";
 
 import { StatsCards } from "@/components/dashboard/stats-cards";
-import { AttendanceOverviewChart } from "@/components/dashboard/attendance-overview-chart";
+import { EmployeeRoster } from "@/components/dashboard/employee-roster";
 import { RecentLeaveRequests } from "@/components/dashboard/recent-leave-requests";
 import { EmployeeDashboardCards } from "@/components/dashboard/employee-dashboard-cards";
 import { PageHeader } from "@/components/page-header";
@@ -27,10 +27,10 @@ export default function DashboardPage() {
           <div className="grid gap-8 lg:grid-cols-5">
             <Card className="lg:col-span-3">
               <CardHeader>
-                <CardTitle>Weekly Attendance Overview</CardTitle>
+                <CardTitle>Employee Roster</CardTitle>
               </CardHeader>
               <CardContent>
-                <AttendanceOverviewChart />
+                <EmployeeRoster />
               </CardContent>
             </Card>
 
