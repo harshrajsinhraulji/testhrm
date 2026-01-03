@@ -100,7 +100,7 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
                   <SelectItem value="Paid">Paid</SelectItem>
                   <SelectItem value="Sick">Sick</SelectItem>
                   <SelectItem value="Unpaid">Unpaid</SelectItem>
-                  <SelectItem value="Maternity">Maternity</longtext>
+                  <SelectItem value="Maternity">Maternity</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
