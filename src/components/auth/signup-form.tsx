@@ -18,7 +18,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
-import { FirebaseError } from "firebase/app";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -51,14 +50,14 @@ export function SignupForm() {
     setLoading(true);
     setError(null);
     try {
-      await signup(values.name, values.email, values.password, values.employeeId);
-      router.push("/dashboard");
+      const user = await signup(values.name, values.email, values.password, values.employeeId);
+      if (user) {
+        router.push("/dashboard");
+      } else {
+        setError("An account with this email already exists.");
+      }
     } catch (e) {
-        if (e instanceof FirebaseError && e.code === 'auth/email-already-in-use') {
-            setError("An account with this email already exists.");
-        } else {
-            setError("An unexpected error occurred. Please try again.");
-        }
+        setError("An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }

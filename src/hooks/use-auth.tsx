@@ -8,9 +8,9 @@ interface AuthContextType {
   user: User | null;
   role: UserRole | null;
   loading: boolean;
-  login: (email: string, pass: string) => Promise<void>;
+  login: (email: string, pass: string) => Promise<User | null>;
   logout: () => void;
-  signup: (name: string, email: string, pass: string, employeeId: string) => Promise<void>;
+  signup: (name: string, email: string, pass: string, employeeId: string) => Promise<User | null>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

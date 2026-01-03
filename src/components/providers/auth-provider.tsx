@@ -2,66 +2,62 @@
 
 import { AuthContext } from "@/hooks/use-auth";
 import type { User } from "@/lib/types";
+import { mockEmployees, mockUsers } from "@/lib/data";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
-import { 
-  useFirebase, 
-  useUser, 
-  setDocumentNonBlocking,
-  useDoc,
-  useMemoFirebase,
-} from "@/firebase";
-import { 
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-} from "firebase/auth";
-import { FirebaseError } from "firebase/app";
-import { doc } from 'firebase/firestore';
+
+// Helper to get/set user from localStorage
+const getStoredUser = (): User | null => {
+  if (typeof window === "undefined") return null;
+  const storedUser = localStorage.getItem("dayflow-user");
+  return storedUser ? JSON.parse(storedUser) : null;
+};
+
+const setStoredUser = (user: User | null) => {
+  if (typeof window === "undefined") return;
+  if (user) {
+    localStorage.setItem("dayflow-user", JSON.stringify(user));
+  } else {
+    localStorage.removeItem("dayflow-user");
+  }
+};
 
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { auth, firestore } = useFirebase();
-  const { user: firebaseUser, isUserLoading } = useUser();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const userDocRef = useMemoFirebase(
-    () => (firestore && firebaseUser ? doc(firestore, 'employees', firebaseUser.uid) : null),
-    [firestore, firebaseUser]
-  );
-  const { data: userRecord, isLoading: isUserRecordLoading } = useDoc<User>(userDocRef);
-
-  const [user, setUser] = useState<User | null>(null);
-
   useEffect(() => {
-    if (!isUserLoading && !isUserRecordLoading) {
-      if (firebaseUser && userRecord) {
-        setUser({
-          id: firebaseUser.uid,
-          email: firebaseUser.email || '',
-          name: userRecord.name,
-          role: userRecord.role,
-          avatarUrl: userRecord.avatarUrl,
-          employeeDetails: userRecord.employeeDetails,
-        });
-      } else {
-        setUser(null);
-      }
+    const storedUser = getStoredUser();
+    if (storedUser) {
+      setUser(storedUser);
     }
-  }, [firebaseUser, userRecord, isUserLoading, isUserRecordLoading]);
+    setLoading(false);
+  }, []);
+  
 
-
-  const login = async (email: string, pass: string): Promise<void> => {
-    await signInWithEmailAndPassword(auth, email, pass);
+  const login = async (email: string, pass: string): Promise<User | null> => {
+    // This is a mock login. In a real app, you'd verify password `pass`.
+    const foundUser = mockEmployees.find((u) => u.email === email);
+    if (foundUser) {
+      setUser(foundUser);
+      setStoredUser(foundUser);
+      return foundUser;
+    }
+    return null;
   };
 
-  const signup = async (name: string, email: string, pass: string, employeeId: string): Promise<void> => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+  const signup = async (name: string, email: string, pass: string, employeeId: string): Promise<User | null> => {
+    const existingUser = mockUsers.find((u) => u.email === email);
+    if (existingUser) {
+      return null; // User already exists
+    }
     const newUser: User = {
-        id: userCredential.user.uid,
+        id: `user-${Date.now()}`,
         name,
         email,
-        role: "Employee", // Default role for now
+        role: "Employee", // Default role
         avatarUrl: `https://picsum.photos/seed/${name.split(' ')[0]}/100/100`,
         employeeDetails: {
             employeeId: employeeId,
@@ -77,26 +73,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
         }
     };
-
-    if (firestore) {
-      const userDoc = doc(firestore, 'employees', newUser.id);
-      setDocumentNonBlocking(userDoc, newUser, {});
-    }
+    mockEmployees.push(newUser as any);
+    mockUsers.push(newUser);
+    setUser(newUser);
+    setStoredUser(newUser);
+    return newUser;
   };
 
-  const logout = async () => {
-    try {
-      await signOut(auth);
-      router.push("/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
+  const logout = () => {
+    setUser(null);
+    setStoredUser(null);
+    router.push("/login");
   };
 
   const value = {
     user,
     role: user?.role ?? null,
-    loading: isUserLoading || isUserRecordLoading,
+    loading,
     login,
     logout,
     signup,

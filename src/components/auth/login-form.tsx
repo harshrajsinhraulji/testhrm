@@ -19,7 +19,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
-import { FirebaseError } from "firebase/app";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -48,15 +47,15 @@ export function LoginForm() {
     setLoading(true);
     setError(null);
     try {
-      await login(values.email, values.password);
-      router.push("/dashboard");
-    } catch (e) {
-        if (e instanceof FirebaseError && e.code === 'auth/invalid-credential') {
-            setError("Invalid email or password. Please try again.");
-        } else {
-            setError("An unexpected error occurred. Please try again.");
-        }
+      const user = await login(values.email, values.password);
+      if (user) {
+        router.push("/dashboard");
+      } else {
+        setError("Invalid email or password. Please try again.");
         form.reset();
+      }
+    } catch (e) {
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
