@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { User, UserRole } from "@/lib/types";
@@ -7,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   role: UserRole | null;
   loading: boolean;
-  login: (email: string, pass: string) => Promise<User | null>;
+  login: (email: string, pass: string) => Promise<void>;
   logout: () => void;
   signup: (name: string, email: string, pass: string) => Promise<User | null>;
 }

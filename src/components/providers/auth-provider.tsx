@@ -1,3 +1,4 @@
+
 "use client";
 
 import { AuthContext } from "@/hooks/use-auth";
@@ -50,14 +51,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [firebaseUser, userRecord, isUserLoading, isUserRecordLoading]);
 
 
-  const login = async (email: string, pass: string): Promise<User | null> => {
-    try {
-      await signInWithEmailAndPassword(auth, email, pass);
-      return user;
-    } catch (error) {
-      console.error("Login failed:", error);
-      return null;
-    }
+  const login = async (email: string, pass: string): Promise<void> => {
+    await signInWithEmailAndPassword(auth, email, pass);
   };
 
   const signup = async (name: string, email: string, pass: string): Promise<User | null> => {
