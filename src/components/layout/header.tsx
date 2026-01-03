@@ -3,6 +3,8 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { UserNav } from "@/components/layout/user-nav";
 import { usePathname } from "next/navigation";
+import { DayflowLogo } from "../icons";
+import { cn } from "@/lib/utils";
 
 const getPageTitle = (pathname: string) => {
     const segments = pathname.split('/').filter(Boolean);
@@ -16,16 +18,15 @@ export function AppHeader() {
   const title = getPageTitle(pathname);
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
-      <div className="md:hidden">
-        <SidebarTrigger />
-      </div>
-      <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-        <h1 className="flex-1 text-xl font-semibold">{title}</h1>
-        <div className="ml-auto">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+       <SidebarTrigger className="sm:hidden" />
+
+       <div className="relative ml-auto flex-1 md:grow-0">
+         {/* Search Bar can go here */}
+       </div>
+      <div className="ml-auto">
           <UserNav />
         </div>
-      </div>
     </header>
   );
 }

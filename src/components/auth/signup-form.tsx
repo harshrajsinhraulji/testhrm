@@ -54,7 +54,7 @@ export function SignupForm() {
       if (user) {
         router.push("/dashboard");
       } else {
-        setError("An account with this email already exists.");
+        setError("An account with this email already exists. Please try signing in instead.");
       }
     } catch (e) {
         setError("An unexpected error occurred. Please try again.");
