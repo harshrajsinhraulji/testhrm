@@ -12,6 +12,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
@@ -31,6 +38,32 @@ const profileSchema = z.object({
   department: z.string().optional(),
   position: z.string().optional(),
 });
+
+// Mock data for dropdowns
+const departments = [
+  "Engineering",
+  "Product",
+  "Design",
+  "Sales",
+  "Marketing",
+  "Human Resources",
+  "Finance",
+  "Customer Support",
+];
+
+const positions = [
+  "Software Engineer",
+  "Senior Software Engineer",
+  "Product Manager",
+  "UX/UI Designer",
+  "Sales Development Representative",
+  "Marketing Manager",
+  "HR Generalist",
+  "Accountant",
+  "Customer Support Specialist",
+  "Team Lead",
+];
+
 
 export function ProfileForm() {
   const { user, role, refreshUser } = useAuth();
@@ -191,20 +224,50 @@ export function ProfileForm() {
                 <div>
                     <h3 className="text-lg font-medium mb-4">Employment Details (Admin)</h3>
                     <div className="grid md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="department" render={({ field }) => (
+                        <FormField
+                            control={form.control}
+                            name="department"
+                            render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Department</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Select a department" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {departments.map(dept => (
+                                        <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                                </Select>
                                 <FormMessage />
                             </FormItem>
-                        )} />
-                        <FormField control={form.control} name="position" render={({ field }) => (
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="position"
+                            render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Position</FormLabel>
-                                <FormControl><Input {...field} /></FormControl>
+                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Select a position" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {positions.map(pos => (
+                                        <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                                </Select>
                                 <FormMessage />
                             </FormItem>
-                        )} />
+                            )}
+                        />
                     </div>
                 </div>
             </>
