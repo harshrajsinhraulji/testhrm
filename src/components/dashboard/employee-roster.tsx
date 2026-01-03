@@ -42,7 +42,7 @@ export function EmployeeRoster() {
             }
         }));
         setEmployees(users);
-      } catch (err: any) -> {
+      } catch (err: any) {
         setError(err.message);
       } finally {
         setLoading(false);
