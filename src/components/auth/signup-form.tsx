@@ -18,6 +18,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import type { UserRole } from "@/lib/types";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -28,6 +30,7 @@ const formSchema = z.object({
   password: z.string().min(8, {
     message: "Password must be at least 8 characters.",
   }),
+  role: z.enum(["Employee", "HR", "Admin"], { required_error: "Please select a role."}),
 });
 
 export function SignupForm() {
@@ -43,6 +46,7 @@ export function SignupForm() {
       employeeId: "",
       email: "",
       password: "",
+      role: "Employee",
     },
   });
 
@@ -50,11 +54,11 @@ export function SignupForm() {
     setLoading(true);
     setError(null);
     try {
-      const user = await signup(values.name, values.email, values.password, values.employeeId);
+      const user = await signup(values.name, values.email, values.password, values.employeeId, values.role);
       if (user) {
         router.push("/dashboard");
       } else {
-        setError("An account with this email already exists. Please try signing in instead.");
+        setError("An account with this email or Employee ID already exists.");
       }
     } catch (e) {
         setError("An unexpected error occurred. Please try again.");
@@ -86,19 +90,43 @@ export function SignupForm() {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="employeeId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Employee ID</FormLabel>
-              <FormControl>
-                <Input placeholder="DF001" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="employeeId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Employee ID</FormLabel>
+                <FormControl>
+                  <Input placeholder="DF001" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Role</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                        <SelectItem value="Employee">Employee</SelectItem>
+                        <SelectItem value="HR">HR</SelectItem>
+                        <SelectItem value="Admin">Admin</SelectItem>
+                    </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <FormField
           control={form.control}
           name="email"

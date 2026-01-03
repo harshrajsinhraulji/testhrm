@@ -1,7 +1,7 @@
 "use client";
 
 import { AuthContext } from "@/hooks/use-auth";
-import type { User } from "@/lib/types";
+import type { User, UserRole } from "@/lib/types";
 import { mockEmployees, mockUsers } from "@/lib/data";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
@@ -48,8 +48,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return null;
   };
 
-  const signup = async (name: string, email: string, pass: string, employeeId: string): Promise<User | null> => {
-    const existingUser = mockUsers.find((u) => u.email === email);
+  const signup = async (name: string, email: string, pass: string, employeeId: string, role: UserRole): Promise<User | null> => {
+    const existingUser = mockUsers.find((u) => u.email === email || u.employeeDetails?.employeeId === employeeId);
     if (existingUser) {
       return null; // User already exists
     }
@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: `user-${Date.now()}`,
         name,
         email,
-        role: "Employee", // Default role
+        role: role,
         avatarUrl: `https://picsum.photos/seed/${name.split(' ')[0]}/100/100`,
         employeeDetails: {
             employeeId: employeeId,
