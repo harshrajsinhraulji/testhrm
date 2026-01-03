@@ -99,8 +99,8 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
         return;
     }
     
-    // Omit department and position from the payload sent to the PATCH endpoint
-    const { department, position, ...updatePayload } = values;
+    // Omit fields that are not meant to be updated by this form
+    const { email, department, position, ...updatePayload } = values;
 
     try {
         const res = await fetch(`/api/employees/${userToEdit.employeeDetails.id}`, {
@@ -250,7 +250,7 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
                                 <FormControl>
                                     <SelectTrigger>
                                     <SelectValue placeholder="Select a position" />
-                                    </Trigger>
+                                    </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
                                     {userToEdit?.employeeDetails?.department && positionsByDepartment[userToEdit.employeeDetails.department]?.map(pos => (
