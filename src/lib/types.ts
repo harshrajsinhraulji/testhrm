@@ -1,3 +1,4 @@
+
 export type UserRole = "Admin" | "HR" | "Employee";
 
 export interface User {
@@ -6,6 +7,7 @@ export interface User {
   email: string;
   role: UserRole;
   avatarUrl: string;
+  is_verified?: boolean;
   employeeDetails?: Employee;
 }
 

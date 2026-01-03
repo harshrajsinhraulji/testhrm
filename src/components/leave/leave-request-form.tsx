@@ -51,18 +51,16 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [loading, setLoading] = React.useState(false);
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    from: undefined,
-    to: undefined,
-  });
-
-
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       reason: "",
     }
   });
+
+  // Get the date range value from the form
+  const date = form.watch("dateRange");
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
@@ -150,12 +148,7 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
                   <Calendar
                     mode="range"
                     selected={date}
-                    onSelect={(range) => {
-                      setDate(range);
-                      if (range) {
-                        field.onChange(range);
-                      }
-                    }}
+                    onSelect={field.onChange}
                     numberOfMonths={2}
                     initialFocus
                   />
