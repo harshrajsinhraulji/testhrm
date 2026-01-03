@@ -50,6 +50,11 @@ export default function AttendancePage() {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [employees, setEmployees] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const fetchAttendance = useCallback(async () => {
     if (!user) return;
@@ -141,77 +146,84 @@ export default function AttendancePage() {
         )}
       </PageHeader>
       
-      <Tabs defaultValue="daily">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="daily">Daily View</TabsTrigger>
-          <TabsTrigger value="weekly">Weekly Streak</TabsTrigger>
-        </TabsList>
-        <TabsContent value="daily">
-          <Card>
-            <CardHeader>
-              <CardTitle>Today's Attendance</CardTitle>
-              <CardDescription>
-                A summary of attendance for {new Date().toDateString()}.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-               {loading ? (
-                <div className="space-y-4">
-                  {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      {role !== 'Employee' && <TableHead>Employee</TableHead>}
-                      <TableHead>Status</TableHead>
-                      <TableHead>Check In</TableHead>
-                      <TableHead>Check Out</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(role === 'Employee' ? attendanceRecords.filter(r=>r.date === today) : dailyRecords).length > 0 ? 
-                     (role === 'Employee' ? attendanceRecords.filter(r=>r.date === today) : dailyRecords).map((record) => (
-                      <TableRow key={record.id}>
-                        {role !== 'Employee' && <TableCell className="font-medium">{getEmployeeName(record.employeeId)}</TableCell>}
-                        <TableCell>
-                          <Badge className={cn("border", getStatusClasses(record.status))}>
-                            {record.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{record.checkIn || "N/A"}</TableCell>
-                        <TableCell>{record.checkOut || "N/A"}</TableCell>
-                      </TableRow>
-                    )) : (
+      {!isClient ? (
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-full max-w-md" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      ) : (
+        <Tabs defaultValue="daily">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="daily">Daily View</TabsTrigger>
+            <TabsTrigger value="weekly">Weekly Streak</TabsTrigger>
+          </TabsList>
+          <TabsContent value="daily">
+            <Card>
+              <CardHeader>
+                <CardTitle>Today's Attendance</CardTitle>
+                <CardDescription>
+                  A summary of attendance for {new Date().toDateString()}.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                          <TableCell colSpan={role !== 'Employee' ? 4 : 3} className="h-24 text-center">
-                              No attendance records for today.
-                          </TableCell>
+                        {role !== 'Employee' && <TableHead>Employee</TableHead>}
+                        <TableHead>Status</TableHead>
+                        <TableHead>Check In</TableHead>
+                        <TableHead>Check Out</TableHead>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="weekly">
-        <Card>
-            <CardHeader>
-              <CardTitle>Weekly Attendance Streak</CardTitle>
-              <CardDescription>
-                Your attendance summary for the last few weeks.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <AttendanceStreak 
-                    employeeId={user?.id}
-                    attendanceRecords={attendanceRecords}
-                />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                    </TableHeader>
+                    <TableBody>
+                      {(role === 'Employee' ? attendanceRecords.filter(r=>r.date === today) : dailyRecords).length > 0 ? 
+                      (role === 'Employee' ? attendanceRecords.filter(r=>r.date === today) : dailyRecords).map((record) => (
+                        <TableRow key={record.id}>
+                          {role !== 'Employee' && <TableCell className="font-medium">{getEmployeeName(record.employeeId)}</TableCell>}
+                          <TableCell>
+                            <Badge className={cn("border", getStatusClasses(record.status))}>
+                              {record.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{record.checkIn || "N/A"}</TableCell>
+                          <TableCell>{record.checkOut || "N/A"}</TableCell>
+                        </TableRow>
+                      )) : (
+                        <TableRow>
+                            <TableCell colSpan={role !== 'Employee' ? 4 : 3} className="h-24 text-center">
+                                No attendance records for today.
+                            </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="weekly">
+          <Card>
+              <CardHeader>
+                <CardTitle>Weekly Attendance Streak</CardTitle>
+                <CardDescription>
+                  Your attendance summary for the last few weeks.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <AttendanceStreak 
+                      employeeId={user?.id}
+                      attendanceRecords={attendanceRecords}
+                  />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 }
