@@ -104,7 +104,7 @@ export function LeaveRequestForm({ setOpen, onFormSubmit }: LeaveRequestFormProp
   };
 
   const handleConfirmSubmit = async () => {
-    if (!formData || !user?.employeeDetails?.id) {
+    if (!formData || !user?.id) {
         toast({
             variant: "destructive",
             title: "Error",
@@ -120,7 +120,7 @@ export function LeaveRequestForm({ setOpen, onFormSubmit }: LeaveRequestFormProp
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          employeeUuid: user.employeeDetails.id, // Use the correct database UUID
+          employeeId: user.id, // Use the user's database UUID
         }),
       });
 

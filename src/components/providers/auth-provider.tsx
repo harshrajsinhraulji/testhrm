@@ -2,7 +2,7 @@
 "use client";
 
 import { AuthContext } from "@/hooks/use-auth";
-import type { User, UserRole, EmployeeUUID } from "@/lib/types";
+import type { User, UserRole, Employee } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: 'Admin',
         avatarUrl: adminAvatar?.imageUrl || 'https://placehold.co/100x100',
         employeeDetails: {
-          id: 'admin-user-static' as EmployeeUUID, // Use static ID for mock admin
+          id: '00000000-0000-0000-0000-000000000000', // Mock UUID for admin
           employeeId: 'DF-ADMIN',
           department: 'Management',
           position: 'System Administrator',

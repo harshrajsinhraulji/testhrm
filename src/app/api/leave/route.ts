@@ -2,10 +2,10 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { z } from 'zod';
-import type { LeaveRequest, EmployeeUUID } from '@/lib/types';
+import type { LeaveRequest, Employee } from '@/lib/types';
 
 const leaveRequestSchema = z.object({
-  employeeUuid: z.string().uuid(),
+  employeeId: z.string().min(1), // Can be either UUID or human-readable, we handle it now
   leaveType: z.enum(["Paid", "Sick", "Unpaid", "Maternity"]),
   startDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "Invalid start date" }),
   endDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "Invalid end date" }),
@@ -15,7 +15,7 @@ const leaveRequestSchema = z.object({
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const employeeId = searchParams.get('employeeId'); // This is the EmployeeUUID
+    const employeeId = searchParams.get('employeeId'); // This is the Employee DB UUID
 
     let query = `
       SELECT 
@@ -70,13 +70,14 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: 'Invalid input.', errors: validation.error.issues }, { status: 400 });
     }
 
-    const { employeeUuid, leaveType, startDate, endDate, reason } = validation.data;
+    // The `employeeId` from the frontend is the employee's database UUID now
+    const { employeeId, leaveType, startDate, endDate, reason } = validation.data;
 
     const { rows } = await db.query(
       `INSERT INTO leave_requests (employee_id, leave_type, start_date, end_date, reason, status)
        VALUES ($1, $2, $3, $4, $5, 'Pending')
        RETURNING *`,
-      [employeeUuid, leaveType, startDate, endDate, reason]
+      [employeeId, leaveType, startDate, endDate, reason]
     );
 
     return NextResponse.json(rows[0], { status: 201 });
