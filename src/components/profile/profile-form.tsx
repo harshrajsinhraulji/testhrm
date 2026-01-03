@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -236,7 +237,7 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
             <>
                 <Separator />
                 <div>
-                    <h3 className="text-lg font-medium mb-4">Employment Details (Admin)</h3>
+                    <h3 className="text-lg font-medium mb-4">Employment Details</h3>
                     <div className="grid md:grid-cols-2 gap-4">
                         <FormField
                             control={form.control}
@@ -244,7 +245,7 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
                             render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Department</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled>
                                 <FormControl>
                                     <SelectTrigger>
                                     <SelectValue placeholder="Select a department" />
@@ -266,7 +267,7 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
                             render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Position</FormLabel>
-                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                 <Select onValueChange={field.onChange} defaultValue={field.value} disabled>
                                 <FormControl>
                                     <SelectTrigger>
                                     <SelectValue placeholder="Select a position" />
