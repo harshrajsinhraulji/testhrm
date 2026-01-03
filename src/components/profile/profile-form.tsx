@@ -22,18 +22,18 @@ import { Separator } from "../ui/separator";
 const profileSchema = z.object({
   name: z.string().min(2, "Name is too short"),
   email: z.string().email(),
-  contactNumber: z.string().min(10, "Invalid phone number"),
-  address: z.string().min(5, "Address is too short"),
-  emergencyContactName: z.string().min(2, "Name is too short"),
-  emergencyContactRelationship: z.string().min(2, "Relationship is too short"),
-  emergencyContactPhone: z.string().min(10, "Invalid phone number"),
+  contactNumber: z.string().min(10, "Invalid phone number").or(z.literal("")),
+  address: z.string().min(5, "Address is too short").or(z.literal("")),
+  emergencyContactName: z.string().min(2, "Name is too short").or(z.literal("")),
+  emergencyContactRelationship: z.string().min(2, "Relationship is too short").or(z.literal("")),
+  emergencyContactPhone: z.string().min(10, "Invalid phone number").or(z.literal("")),
   // Admin only fields
-  department: z.string(),
-  position: z.string(),
+  department: z.string().optional(),
+  position: z.string().optional(),
 });
 
 export function ProfileForm() {
-  const { user, role } = useAuth();
+  const { user, role, refreshUser } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const isAdmin = role === 'Admin' || role === 'HR';
@@ -53,17 +53,49 @@ export function ProfileForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof profileSchema>) {
+  async function onSubmit(values: z.infer<typeof profileSchema>) {
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      console.log(values);
-      toast({
-        title: "Profile Updated",
-        description: "Your information has been saved successfully.",
-      });
-      setLoading(false);
-    }, 1500);
+    if (!user?.employeeDetails?.id) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not find user to update.",
+        });
+        setLoading(false);
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/employees/${user.employeeDetails.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(values),
+        });
+
+        if (!res.ok) {
+            throw new Error("Failed to update profile.");
+        }
+
+        // The API returns the updated user object
+        const updatedUser = await res.json();
+        
+        // Refresh the user context with the new data
+        await refreshUser();
+
+        toast({
+            title: "Profile Updated",
+            description: "Your information has been saved successfully.",
+        });
+
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Update Failed",
+            description: error.message || "An unexpected error occurred.",
+        });
+    } finally {
+        setLoading(false);
+    }
   }
 
   return (

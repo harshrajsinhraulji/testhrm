@@ -137,6 +137,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push("/login");
   };
 
+  const refreshUser = async () => {
+    if (!user?.employeeDetails?.id) {
+        console.error("Cannot refresh user without an ID.");
+        return;
+    }
+    try {
+        const res = await fetch(`/api/employees/${user.employeeDetails.id}`);
+        if (!res.ok) {
+            throw new Error("Failed to fetch updated user data.");
+        }
+        const updatedUser = await res.json();
+        setUser(updatedUser);
+        setStoredUser(updatedUser);
+    } catch (error) {
+        console.error("Error refreshing user:", error);
+        // Optional: handle error, maybe log out user if session is invalid
+    }
+  };
+
   const value = {
     user,
     role: user?.role ?? null,
@@ -144,6 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     logout,
     signup,
+    refreshUser,
   };
 
   return (
