@@ -112,6 +112,7 @@ export function AdminCharts() {
     return Object.entries(counts).map(([department, count]) => ({
       department,
       count,
+      fill: `var(--color-${department.replace(/[\s/]/g, "")})`
     }));
   }, [employees]);
 
@@ -166,9 +167,9 @@ export function AdminCharts() {
               content={<ChartTooltipContent hideLabel />}
             />
             <Bar dataKey="count" radius={5}>
-                {departmentData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={`var(--color-${entry.department.replace(/\s/g, "")})`} />
-                ))}
+              {departmentData.map((entry) => (
+                <Cell key={entry.department} fill={entry.fill} />
+              ))}
             </Bar>
           </BarChart>
         </ChartContainer>
