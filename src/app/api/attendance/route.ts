@@ -31,8 +31,8 @@ export async function GET(req: Request) {
         employeeId: row.employee_id,
         date: new Date(row.record_date).toISOString().split('T')[0],
         status: row.status,
-        checkIn: row.check_in_time ? new Date(row.check_in_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) : null,
-        checkOut: row.check_out_time ? new Date(row.check_out_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) : null,
+        checkIn: row.check_in_time ? new Date(row.check_in_time).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }) : null,
+        checkOut: row.check_out_time ? new Date(row.check_out_time).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }) : null,
     }));
 
 

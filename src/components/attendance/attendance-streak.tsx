@@ -4,7 +4,7 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { AttendanceRecord, AttendanceStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { addDays, format, startOfWeek } from 'date-fns';
+import { addDays, format, startOfWeek, getDay } from 'date-fns';
 
 interface AttendanceStreakProps {
     employeeId?: string;

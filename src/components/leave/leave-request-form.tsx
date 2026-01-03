@@ -21,11 +21,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { CalendarIcon, Loader2 } from "lucide-react";
-import { Calendar } from "../ui/calendar";
-import { cn } from "@/lib/utils";
-import { differenceInDays, format } from "date-fns";
+import { Input } from "@/components/ui/input";
+import { Loader2 } from "lucide-react";
+import { differenceInDays, parse } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
 import { mockLeaveRequests } from "@/lib/data";
@@ -40,20 +38,27 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { DateRange } from "react-day-picker";
+
+const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
 const formSchema = z.object({
   leaveType: z.enum(["Paid", "Sick", "Unpaid", "Maternity"], {
     required_error: "Please select a leave type.",
   }),
-  dateRange: z.object({
-    from: z.date({ required_error: "A start date is required."}),
-    to: z.date({ required_error: "An end date is required."}),
-  }, { required_error: "Please select a date range."}),
+  startDate: z.string().regex(dateRegex, "Date must be in YYYY-MM-DD format."),
+  endDate: z.string().regex(dateRegex, "Date must be in YYYY-MM-DD format."),
   reason: z.string().min(10, { message: "Reason must be at least 10 characters." }).max(200),
-}).refine(data => data.dateRange.to >= data.dateRange.from, {
+}).refine(data => {
+    try {
+        const start = parse(data.startDate, 'yyyy-MM-dd', new Date());
+        const end = parse(data.endDate, 'yyyy-MM-dd', new Date());
+        return end >= start;
+    } catch {
+        return false;
+    }
+}, {
   message: "End date cannot be before start date.",
-  path: ["dateRange"],
+  path: ["endDate"],
 });
 
 type LeaveRequestFormValues = z.infer<typeof formSchema>;
@@ -82,9 +87,15 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
   }
 
   const calculateLeaveDays = () => {
-    if (formData?.dateRange?.from && formData?.dateRange?.to) {
-      const days = differenceInDays(formData.dateRange.to, formData.dateRange.from) + 1;
-      return days > 0 ? days : 0;
+    if (formData) {
+        try {
+            const start = parse(formData.startDate, 'yyyy-MM-dd', new Date());
+            const end = parse(formData.endDate, 'yyyy-MM-dd', new Date());
+            const days = differenceInDays(end, start) + 1;
+            return days > 0 ? days : 0;
+        } catch {
+            return 0;
+        }
     }
     return 0;
   };
@@ -110,8 +121,8 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
             employeeId: user.employeeDetails.employeeId,
             employeeName: user.name,
             leaveType: formData.leaveType,
-            startDate: formData.dateRange.from.toISOString(),
-            endDate: formData.dateRange.to.toISOString(),
+            startDate: formData.startDate,
+            endDate: formData.endDate,
             reason: formData.reason,
             status: "Pending",
         });
@@ -156,60 +167,34 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="dateRange"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Leave Dates</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !field.value?.from && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {field.value?.from ? (
-                          field.value.to ? (
-                            <>
-                              {format(field.value.from, "LLL dd, y")} -{" "}
-                              {format(field.value.to, "LLL dd, y")}
-                            </>
-                          ) : (
-                            format(field.value.from, "LLL dd, y")
-                          )
-                        ) : (
-                          <span>Pick a date range</span>
-                        )}
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent 
-                    className="w-auto p-0" 
-                    align="start"
-                    onInteractOutside={(e) => {
-                      e.preventDefault();
-                    }}
-                  >
-                    <Calendar
-                      initialFocus
-                      mode="range"
-                      defaultMonth={field.value?.from}
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      numberOfMonths={2}
-                      disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="startDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Start Date</FormLabel>
+                  <FormControl>
+                    <Input placeholder="YYYY-MM-DD" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="endDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>End Date</FormLabel>
+                  <FormControl>
+                    <Input placeholder="YYYY-MM-DD" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           <FormField
             control={form.control}
@@ -238,8 +223,8 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
             <AlertDialogDescription>
               You are requesting a leave of absence for{" "}
               <span className="font-bold">{calculateLeaveDays()}</span> day(s) from{" "}
-              <span className="font-bold">{formData?.dateRange?.from ? format(formData.dateRange.from, "PPP") : ""}</span> to{" "}
-              <span className="font-bold">{formData?.dateRange?.to ? format(formData.dateRange.to, "PPP") : ""}</span>.
+              <span className="font-bold">{formData?.startDate}</span> to{" "}
+              <span className="font-bold">{formData?.endDate}</span>.
               Please confirm that you want to submit this request.
             </AlertDialogDescription>
           </AlertDialogHeader>
