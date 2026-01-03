@@ -15,9 +15,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import type { SalaryStructure } from "@/lib/types";
+import { getPredefinedSalary } from "@/lib/salary-config";
+import { useAuth } from "@/hooks/use-auth";
 
 const formSchema = z.object({
   basicSalary: z.coerce.number().min(0, "Cannot be negative"),
@@ -36,16 +38,59 @@ interface EditSalaryFormProps {
 export function EditSalaryForm({ structure, onFormSubmit }: EditSalaryFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  
+  // Find the full employee object to get department and position
+  // This is a bit of a workaround; ideally the structure would already have this.
+  // We'll assume the payroll page has access to the employee list.
+  // For a more robust app, we'd fetch employee details if needed.
+  const [employeeDetails, setEmployeeDetails] = useState<{department: string, position: string} | null>(null)
+
+  useEffect(() => {
+    async function fetchEmployeeDetails() {
+        if(structure.employeeDbId) {
+            const res = await fetch(`/api/employees/${structure.employeeDbId}`);
+            if(res.ok) {
+                const data = await res.json();
+                setEmployeeDetails(data.employeeDetails);
+            }
+        }
+    }
+    fetchEmployeeDetails();
+  }, [structure.employeeDbId]);
+
 
   const form = useForm<EditSalaryFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      basicSalary: structure.basicSalary || 0,
-      hra: structure.hra || 0,
-      otherAllowances: structure.otherAllowances || 0,
-      pf: structure.pf || 0,
+      basicSalary: 0,
+      hra: 0,
+      otherAllowances: 0,
+      pf: 0,
     },
   });
+
+  useEffect(() => {
+    // If a structure exists (basic salary is not 0), use it.
+    // Otherwise, try to set a predefined salary.
+    if (structure.basicSalary > 0) {
+        form.reset({
+            basicSalary: structure.basicSalary || 0,
+            hra: structure.hra || 0,
+            otherAllowances: structure.otherAllowances || 0,
+            pf: structure.pf || 0,
+        });
+    } else if (employeeDetails) {
+        const predefined = getPredefinedSalary(employeeDetails.department, employeeDetails.position);
+        form.reset({
+            basicSalary: predefined.basic,
+            hra: predefined.hra,
+            otherAllowances: predefined.otherAllowances,
+            pf: predefined.pf,
+        });
+    }
+  }, [structure, employeeDetails, form]);
+
 
   async function onSubmit(values: EditSalaryFormValues) {
     setLoading(true);
