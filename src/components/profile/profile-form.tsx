@@ -25,6 +25,7 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "../ui/separator";
+import type { User } from "@/lib/types";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name is too short"),
@@ -64,47 +65,54 @@ const positions = [
   "Team Lead",
 ];
 
+interface ProfileFormProps {
+    employee?: User | null; // Make employee optional
+    onFormSubmit?: () => void;
+}
 
-export function ProfileForm() {
-  const { user, role, refreshUser } = useAuth();
+export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
+  const { user: loggedInUser, role, refreshUser } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const isAdmin = role === 'Admin' || role === 'HR';
 
+  // Determine which user object to use: the one passed as a prop, or the logged-in user.
+  const userToEdit = employee || loggedInUser;
+
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: user?.name || "",
-      email: user?.email || "",
-      contactNumber: user?.employeeDetails?.contactNumber || "",
-      address: user?.employeeDetails?.address || "",
-      emergencyContactName: user?.employeeDetails?.emergencyContact.name || "",
-      emergencyContactRelationship: user?.employeeDetails?.emergencyContact.relationship || "",
-      emergencyContactPhone: user?.employeeDetails?.emergencyContact.phone || "",
-      department: user?.employeeDetails?.department || "",
-      position: user?.employeeDetails?.position || "",
+      name: "",
+      email: "",
+      contactNumber: "",
+      address: "",
+      emergencyContactName: "",
+      emergencyContactRelationship: "",
+      emergencyContactPhone: "",
+      department: "",
+      position: "",
     },
   });
 
   useEffect(() => {
-    if (user) {
+    if (userToEdit) {
         form.reset({
-            name: user.name || "",
-            email: user.email || "",
-            contactNumber: user.employeeDetails?.contactNumber || "",
-            address: user.employeeDetails?.address || "",
-            emergencyContactName: user.employeeDetails?.emergencyContact.name || "",
-            emergencyContactRelationship: user.employeeDetails?.emergencyContact.relationship || "",
-            emergencyContactPhone: user.employeeDetails?.emergencyContact.phone || "",
-            department: user.employeeDetails?.department || "",
-            position: user.employeeDetails?.position || "",
+            name: userToEdit.name || "",
+            email: userToEdit.email || "",
+            contactNumber: userToEdit.employeeDetails?.contactNumber || "",
+            address: userToEdit.employeeDetails?.address || "",
+            emergencyContactName: userToEdit.employeeDetails?.emergencyContact.name || "",
+            emergencyContactRelationship: userToEdit.employeeDetails?.emergencyContact.relationship || "",
+            emergencyContactPhone: userToEdit.employeeDetails?.emergencyContact.phone || "",
+            department: userToEdit.employeeDetails?.department || "",
+            position: userToEdit.employeeDetails?.position || "",
         });
     }
-  }, [user, form]);
+  }, [userToEdit, form]);
 
   async function onSubmit(values: z.infer<typeof profileSchema>) {
     setLoading(true);
-    if (!user?.employeeDetails?.id) {
+    if (!userToEdit?.employeeDetails?.id) {
         toast({
             variant: "destructive",
             title: "Error",
@@ -115,7 +123,7 @@ export function ProfileForm() {
     }
     
     try {
-        const res = await fetch(`/api/employees/${user.employeeDetails.id}`, {
+        const res = await fetch(`/api/employees/${userToEdit.employeeDetails.id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(values),
@@ -125,7 +133,13 @@ export function ProfileForm() {
             throw new Error("Failed to update profile.");
         }
         
-        await refreshUser();
+        // If an onFormSubmit callback is provided (for editing others), use it.
+        // Otherwise, use the default refreshUser for the logged-in user.
+        if (onFormSubmit) {
+            onFormSubmit();
+        } else {
+            await refreshUser();
+        }
 
         toast({
             title: "Profile Updated",
@@ -274,7 +288,7 @@ export function ProfileForm() {
         )}
 
         <div className="flex justify-end">
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading || !form.formState.isDirty}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save Changes
           </Button>
