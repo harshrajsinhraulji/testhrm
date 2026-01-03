@@ -104,10 +104,10 @@ export function StatsCards() {
     }
     
     const statsCards = [
-        { title: "Total Employees", value: stats?.totalEmployees, icon: Users },
-        { title: "Present Today", value: stats?.presentToday, icon: UserCheck },
-        { title: "On Leave", value: stats?.onLeaveToday, icon: Plane },
-        { title: "Absent", value: stats?.absentToday, icon: UserX },
+        { title: "Total Employees", value: stats?.totalEmployees, icon: Users, color: "text-blue-500" },
+        { title: "Present Today", value: stats?.presentToday, icon: UserCheck, color: "text-green-500" },
+        { title: "On Leave", value: stats?.onLeaveToday, icon: Plane, color: "text-yellow-500" },
+        { title: "Absent", value: stats?.absentToday, icon: UserX, color: "text-red-500" },
     ];
     
     return (
@@ -116,11 +116,10 @@ export function StatsCards() {
                 <Card key={stat.title}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                        <stat.icon className={`h-4 w-4 text-muted-foreground`} />
+                        <stat.icon className={`h-4 w-4 text-muted-foreground ${stat.color}`} />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{stat.value ?? 0}</div>
-                        <p className="text-xs text-muted-foreground">Updated just now</p>
                     </CardContent>
                 </Card>
             ))}

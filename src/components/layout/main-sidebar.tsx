@@ -46,11 +46,11 @@ export function MainSidebar() {
   const menuItems = (role === 'Admin' || role === 'HR') ? adminMenuItems : employeeMenuItems;
 
   return (
-    <Sidebar side="left" className="border-r">
+    <Sidebar side="left" className="border-r bg-muted/40">
       <SidebarHeader>
         <div className="flex items-center gap-2">
-          <DayflowLogo className="w-8 h-8 text-sidebar-primary" />
-          <span className="text-lg font-semibold text-sidebar-primary font-headline">
+          <DayflowLogo className="w-8 h-8 text-primary" />
+          <span className="text-lg font-semibold text-primary font-headline">
             Dayflow
           </span>
         </div>
