@@ -82,7 +82,8 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
   const calculateLeaveDays = () => {
     if (startDate && endDate) {
       // +1 to make the count inclusive of the start and end dates
-      return differenceInDays(endDate, startDate) + 1;
+      const days = differenceInDays(endDate, startDate) + 1;
+      return days > 0 ? days : 0;
     }
     return 0;
   };
@@ -179,7 +180,7 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0" align="start" onPointerDownOutside={(e) => e.preventDefault()}>
                       <Calendar
                         mode="single"
                         selected={field.value}
@@ -214,7 +215,7 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0" align="start" onPointerDownOutside={(e) => e.preventDefault()}>
                       <Calendar
                         mode="single"
                         selected={field.value}
@@ -243,7 +244,7 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
               </FormItem>
             )}
           />
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full" disabled={loading || !startDate || !endDate}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Submit Request
           </Button>
