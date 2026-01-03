@@ -8,7 +8,6 @@ export interface User {
   email: string;
   role: UserRole;
   avatarUrl: string;
-  is_verified?: boolean;
   employeeDetails?: Employee;
 }
 
