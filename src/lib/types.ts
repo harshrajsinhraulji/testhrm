@@ -55,7 +55,11 @@ export interface LeaveRequest {
 
 export interface PaySlip {
   id: string;
-  employeeId: string;
+  employeeId: string; // Employee DB UUID
+  employeeName?: string;
+  employeeCode?: string;
+  position?: string;
+  department?: string;
   month: string;
   year: number;
   basicSalary: number;

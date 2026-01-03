@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { EditSalaryForm } from "@/components/payroll/edit-salary-form";
+import Link from "next/link";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
@@ -60,7 +61,9 @@ export default function PayrollPage() {
   }
 
   useEffect(() => {
-    fetchPayrollData();
+    if (user) {
+      fetchPayrollData();
+    }
   }, [user, role]);
 
   const handleEditClick = (structure: SalaryStructure) => {
@@ -179,7 +182,9 @@ export default function PayrollPage() {
                       <TableCell className="font-medium">{slip.month} {slip.year}</TableCell>
                       <TableCell>{formatCurrency(slip.netSalary)}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="outline" size="sm" disabled>Download</Button>
+                        <Button variant="outline" size="sm" asChild>
+                            <Link href={`/dashboard/payroll/${slip.id}`}>View Details</Link>
+                        </Button>
                       </TableCell>
                     </TableRow>
                   )) : (
