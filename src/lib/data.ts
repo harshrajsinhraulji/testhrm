@@ -1,10 +1,11 @@
 import type { User, Employee, AttendanceRecord, LeaveRequest, PaySlip, SalaryStructure } from './types';
 
-export const mockEmployees: (User & { employeeDetails: Employee })[] = [
+export const mockEmployees: (User & { employeeDetails: Employee, password?: string })[] = [
   {
     id: 'user-1',
     name: 'Sarah Chen',
-    email: 'sarah.chen@dayflow.com',
+    email: 'admin@dayflow.com',
+    password: 'admin',
     role: 'Admin',
     avatarUrl: 'https://picsum.photos/seed/sarah/100/100',
     employeeDetails: {
@@ -20,7 +21,8 @@ export const mockEmployees: (User & { employeeDetails: Employee })[] = [
   {
     id: 'user-2',
     name: 'Mike Rivera',
-    email: 'mike.rivera@dayflow.com',
+    email: 'user@dayflow.com',
+    password: 'user',
     role: 'Employee',
     avatarUrl: 'https://picsum.photos/seed/mike/100/100',
     employeeDetails: {
@@ -37,6 +39,7 @@ export const mockEmployees: (User & { employeeDetails: Employee })[] = [
     id: 'user-3',
     name: 'Emily Carter',
     email: 'emily.carter@dayflow.com',
+    password: 'password123',
     role: 'Employee',
     avatarUrl: 'https://picsum.photos/seed/emily/100/100',
     employeeDetails: {
@@ -53,6 +56,7 @@ export const mockEmployees: (User & { employeeDetails: Employee })[] = [
     id: 'user-4',
     name: 'David Lee',
     email: 'david.lee@dayflow.com',
+    password: 'password123',
     role: 'HR',
     avatarUrl: 'https://picsum.photos/seed/david/100/100',
     employeeDetails: {
@@ -67,7 +71,7 @@ export const mockEmployees: (User & { employeeDetails: Employee })[] = [
   }
 ];
 
-export const mockUsers: User[] = mockEmployees.map(({ employeeDetails, ...user }) => user);
+export const mockUsers: User[] = mockEmployees.map(({ employeeDetails, password, ...user }) => user);
 
 export const getEmployeeDataForUser = (userId: string): User | null => {
     return mockEmployees.find(emp => emp.id === userId) || null;

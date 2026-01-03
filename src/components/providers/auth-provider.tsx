@@ -38,12 +38,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
 
   const login = async (email: string, pass: string): Promise<User | null> => {
-    // This is a mock login. In a real app, you'd verify password `pass`.
-    const foundUser = mockEmployees.find((u) => u.email === email);
+    const foundUser = mockEmployees.find((u) => u.email === email && u.password === pass);
     if (foundUser) {
-      setUser(foundUser);
-      setStoredUser(foundUser);
-      return foundUser;
+      const { password, ...userToStore } = foundUser;
+      setUser(userToStore);
+      setStoredUser(userToStore);
+      return userToStore;
     }
     return null;
   };
@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signup = async (name: string, email: string, pass: string, employeeId: string, role: UserRole): Promise<User | null> => {
     const existingUser = mockUsers.find((u) => u.email === email || u.employeeDetails?.employeeId === employeeId);
     if (existingUser) {
-      return null; // User already exists
+        return null;
     }
     const newUser: User = {
         id: `user-${Date.now()}`,
@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
         }
     };
-    mockEmployees.push(newUser as any);
+    mockEmployees.push({ ...newUser, password: pass } as any);
     mockUsers.push(newUser);
     setUser(newUser);
     setStoredUser(newUser);
