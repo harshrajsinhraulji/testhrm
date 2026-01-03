@@ -17,23 +17,33 @@ import {
   Wallet,
   User,
   LogOut,
-  Briefcase,
+  Users,
 } from "lucide-react";
 import { DayflowLogo } from "@/components/icons";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
-const menuItems = [
+const employeeMenuItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/attendance", label: "Attendance", icon: CalendarCheck },
-  { href: "/dashboard/leave", label: "Leave", icon: Plane },
-  { href: "/dashboard/payroll", label: "Payroll", icon: Wallet },
-  { href: "/dashboard/profile", label: "Profile", icon: User },
+  { href: "/dashboard/attendance", label: "My Attendance", icon: CalendarCheck },
+  { href: "/dashboard/leave", label: "My Leave", icon: Plane },
+  { href: "/dashboard/payroll", label: "My Payroll", icon: Wallet },
+  { href: "/dashboard/profile", label: "My Profile", icon: User },
 ];
+
+const adminMenuItems = [
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/dashboard/employees", label: "Employees", icon: Users },
+    { href: "/dashboard/attendance", label: "Attendance", icon: CalendarCheck },
+    { href: "/dashboard/leave", label: "Leave", icon: Plane },
+    { href: "/dashboard/payroll", label: "Payroll", icon: Wallet },
+]
 
 export function MainSidebar() {
   const pathname = usePathname();
   const { user, logout, role } = useAuth();
+
+  const menuItems = (role === 'Admin' || role === 'HR') ? adminMenuItems : employeeMenuItems;
 
   return (
     <Sidebar side="left" className="border-r">

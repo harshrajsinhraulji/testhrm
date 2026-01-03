@@ -8,16 +8,29 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 
+const getWelcomeContent = (role: string | null, name?: string) => {
+    switch (role) {
+        case 'Admin':
+            return { title: 'Admin Dashboard', description: "Here's a summary of HR activities today." };
+        case 'HR':
+            return { title: `Welcome, ${name}!`, description: "Here's an overview of employee management." };
+        case 'Employee':
+        default:
+            return { title: `Welcome, ${name}!`, description: "Manage your profile, attendance, and leave requests." };
+    }
+}
+
 export default function DashboardPage() {
   const { user, role } = useAuth();
-
+  
+  const { title, description } = getWelcomeContent(role, user?.name);
   const isAdminOrHR = role === 'Admin' || role === 'HR';
 
   return (
     <div className="space-y-6">
       <PageHeader 
-        title={isAdminOrHR ? "Admin Dashboard" : `Welcome, ${user?.name}!`}
-        description={isAdminOrHR ? "Here's a summary of HR activities today." : "Manage your profile, attendance, and leave requests."} 
+        title={title}
+        description={description} 
       />
       
       {isAdminOrHR ? (
