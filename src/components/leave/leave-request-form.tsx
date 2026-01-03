@@ -77,6 +77,8 @@ export function LeaveRequestForm({ setOpen }: LeaveRequestFormProps) {
   const form = useForm<LeaveRequestFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      startDate: "",
+      endDate: "",
       reason: "",
     }
   });
