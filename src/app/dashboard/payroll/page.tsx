@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -8,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
 import type { PaySlip, SalaryStructure } from "@/lib/types";
-import { MoreHorizontal, Pencil } from "lucide-react";
+import { MoreHorizontal, Pencil, FileText } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +19,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { EditSalaryForm } from "@/components/payroll/edit-salary-form";
 import Link from "next/link";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
@@ -75,6 +85,24 @@ export default function PayrollPage() {
     fetchPayrollData();
     setIsFormOpen(false);
   }
+  
+  const handleGenerateSlips = async () => {
+    try {
+      const res = await fetch('/api/payroll/generate', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to generate payslips.");
+      toast({
+        title: "Payslips Generated",
+        description: data.message,
+      });
+    } catch (error: any) {
+       toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    }
+  }
 
   const isAdminOrHR = role === "Admin" || role === "HR";
 
@@ -108,7 +136,30 @@ export default function PayrollPage() {
       <PageHeader
         title="Payroll"
         description={isAdminOrHR ? "View and manage employee salary details." : "View your payroll information and salary details."}
-      />
+      >
+        {isAdminOrHR && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button>
+                <FileText className="mr-2 h-4 w-4" />
+                Generate Slips for Month
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will generate new payslips for all employees for the current month based on their saved salary structures. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleGenerateSlips}>Generate</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </PageHeader>
       {isAdminOrHR ? (
         <>
             <Card>

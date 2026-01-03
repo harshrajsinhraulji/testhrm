@@ -33,44 +33,31 @@ export default function EmployeeProfilePage() {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  const fetchEmployee = useCallback(async () => {
     if (!employeeId) return;
-
-    async function fetchEmployee() {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/employees/${employeeId}/details`);
-        if (!res.ok) {
-          throw new Error('Failed to fetch employee details.');
-        }
-        const data: User = await res.json();
-        setEmployee(data);
-      } catch (error: any) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: error.message,
-        });
-        router.push('/dashboard/employees');
-      } finally {
-        setLoading(false);
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/employees/${employeeId}/details`);
+      if (!res.ok) {
+        throw new Error('Failed to fetch employee details.');
       }
+      const data: User = await res.json();
+      setEmployee(data);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message,
+      });
+      router.push('/dashboard/employees');
+    } finally {
+      setLoading(false);
     }
-    fetchEmployee();
   }, [employeeId, toast, router]);
 
-  const refreshEmployee = async () => {
-    if (!employeeId) return;
-    try {
-        const res = await fetch(`/api/employees/${employeeId}/details`);
-        if (!res.ok) throw new Error("Failed to fetch updated user data.");
-        const updatedUser = await res.json();
-        setEmployee(updatedUser);
-    } catch (error) {
-        console.error("Error refreshing user:", error);
-    }
-  };
-
+  useEffect(() => {
+    fetchEmployee();
+  }, [fetchEmployee]);
 
   const handlePictureChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -91,7 +78,7 @@ export default function EmployeeProfilePage() {
 
         if (!res.ok) throw new Error("Failed to upload image.");
         
-        await refreshEmployee();
+        await fetchEmployee();
         
         toast({
           title: "Profile Picture Updated",
@@ -220,7 +207,7 @@ export default function EmployeeProfilePage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ProfileForm employee={employee} onFormSubmit={refreshEmployee} />
+              <ProfileForm employee={employee} onFormSubmit={fetchEmployee} />
             </CardContent>
           </Card>
         </div>

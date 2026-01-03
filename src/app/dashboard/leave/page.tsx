@@ -42,6 +42,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 const getStatusClasses = (status: LeaveStatus) => {
   switch (status) {
@@ -63,6 +65,8 @@ export default function LeavePage() {
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
   const [isDetailViewOpen, setIsDetailViewOpen] = useState(false);
+  const [isRejectionViewOpen, setIsRejectionViewOpen] = useState(false);
+  const [rejectionComments, setRejectionComments] = useState("");
   const { toast } = useToast();
 
   const fetchLeaveRequests = useCallback(async () => {
@@ -93,12 +97,12 @@ export default function LeavePage() {
     fetchLeaveRequests();
   }, [fetchLeaveRequests]);
 
-  const handleStatusUpdate = async (id: string, status: LeaveStatus) => {
+  const handleStatusUpdate = async (id: string, status: LeaveStatus, comments?: string) => {
     try {
       const res = await fetch(`/api/leave?id=${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, comments }),
       });
       if (!res.ok) throw new Error(`Failed to ${status.toLowerCase()} request.`);
 
@@ -107,6 +111,9 @@ export default function LeavePage() {
         description: `The leave request has been successfully ${status.toLowerCase()}.`,
       });
       fetchLeaveRequests();
+      setIsRejectionViewOpen(false);
+      setRejectionComments("");
+
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -119,6 +126,17 @@ export default function LeavePage() {
   const handleViewDetailsClick = (request: LeaveRequest) => {
     setSelectedRequest(request);
     setIsDetailViewOpen(true);
+  };
+  
+  const handleRejectClick = (request: LeaveRequest) => {
+    setSelectedRequest(request);
+    setIsRejectionViewOpen(true);
+  };
+  
+  const handleRejectionSubmit = () => {
+    if (selectedRequest) {
+      handleStatusUpdate(selectedRequest.id, 'Rejected', rejectionComments);
+    }
   };
 
   return (
@@ -233,7 +251,7 @@ export default function LeavePage() {
                                     <DropdownMenuItem
                                       className="text-red-600 focus:text-red-600"
                                       onClick={() =>
-                                        handleStatusUpdate(request.id, 'Rejected')
+                                        handleRejectClick(request)
                                       }
                                     >
                                       <X className="mr-2 h-4 w-4" />
@@ -325,6 +343,30 @@ export default function LeavePage() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isRejectionViewOpen} onOpenChange={setIsRejectionViewOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reject Leave Request</DialogTitle>
+            <DialogDescription>
+                Provide comments for rejecting {selectedRequest?.employeeName}'s request.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-2">
+            <Label htmlFor="rejection-comments">Comments (Optional)</Label>
+            <Textarea 
+              id="rejection-comments"
+              placeholder="e.g., Request overlaps with project deadline."
+              value={rejectionComments}
+              onChange={(e) => setRejectionComments(e.target.value)}
+            />
+          </div>
+          <div className='flex justify-end gap-2'>
+            <Button variant="ghost" onClick={() => setIsRejectionViewOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleRejectionSubmit}>Confirm Rejection</Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>
