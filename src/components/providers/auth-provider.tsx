@@ -22,6 +22,20 @@ const setStoredUser = (user: User | null) => {
   }
 };
 
+const getStoredToken = (): string | null => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("dayflow-token");
+};
+
+const setStoredToken = (token: string | null) => {
+    if (typeof window === "undefined") return;
+    if (token) {
+        localStorage.setItem("dayflow-token", token);
+    } else {
+        localStorage.removeItem("dayflow-token");
+    }
+};
+
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -30,7 +44,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const storedUser = getStoredUser();
-    if (storedUser) {
+    const storedToken = getStoredToken();
+    if (storedUser && storedToken) {
+      // Here you might want to verify the token with a backend endpoint
+      // For now, we'll trust it if it exists.
       setUser(storedUser);
     }
     setLoading(false);
@@ -38,10 +55,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
 
   const login = async (email: string, pass: string): Promise<User | null> => {
-    // This will be replaced with a real API call.
-    // For now, it will not log anyone in as mock data is removed.
-    console.log("Login attempt - will be implemented with API call");
-    return null;
+    try {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password: pass }),
+        });
+
+        if (!response.ok) {
+            return null;
+        }
+
+        const { user, token } = await response.json();
+        setUser(user);
+        setStoredUser(user);
+        setStoredToken(token);
+        return user;
+    } catch (error) {
+        console.error("Login error:", error);
+        return null;
+    }
   };
 
   const signup = async (name: string, email: string, pass: string, employeeId: string, role: UserRole): Promise<User | null> => {
@@ -58,9 +91,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         const newUser: User = await response.json();
-        setUser(newUser);
-        setStoredUser(newUser);
-        return newUser;
+        // After signup, we don't have a token yet, so we should guide user to login.
+        // For a better UX, the signup could also return a token. For now, we just prepare for login.
+        // Or we can log them in directly. Let's try logging them in.
+        return login(email, pass);
+
     } catch (error) {
         console.error("Signup error:", error);
         return null;
@@ -70,6 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     setStoredUser(null);
+    setStoredToken(null);
     router.push("/login");
   };
 
