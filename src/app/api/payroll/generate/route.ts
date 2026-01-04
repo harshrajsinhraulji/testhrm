@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { getDaysInMonth } from 'date-fns';
+import { getDaysInMonth, eachDayOfInterval, format } from 'date-fns';
 
 // Helper to verify role from JWT - assuming you have this utility
 import { getRoleFromToken } from '@/app/api/helpers';
@@ -22,10 +22,11 @@ export async function POST(req: Request) {
 
         const now = new Date();
         const year = now.getFullYear();
-        const month = now.toLocaleString('default', { month: 'long' });
+        const monthName = now.toLocaleString('default', { month: 'long' });
+        const monthIndex = now.getMonth();
         const daysInMonth = getDaysInMonth(now);
-        const firstDayOfMonth = new Date(year, now.getMonth(), 1);
-        const lastDayOfMonth = new Date(year, now.getMonth() + 1, 0);
+        const firstDayOfMonth = new Date(year, monthIndex, 1);
+        const lastDayOfMonth = new Date(year, monthIndex, daysInMonth);
 
         // 1. Fetch all employees
         const { rows: employees } = await client.query('SELECT id FROM employees');
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
             // Check if a payslip for this employee and month already exists
             const { rows: existingSlips } = await client.query(
                 `SELECT id FROM pay_slips WHERE employee_id = $1 AND month = $2 AND year = $3`,
-                [employeeId, month, year]
+                [employeeId, monthName, year]
             );
 
             if (existingSlips.length > 0) {
@@ -51,52 +52,56 @@ export async function POST(req: Request) {
             );
 
             if (salaryRows.length === 0) {
+                console.warn(`No salary structure for employee ${employeeId}. Skipping.`);
                 continue; // Skip employee if no salary structure is found
             }
             const salary = salaryRows[0];
             const totalMonthlySalary = parseFloat(salary.basic_salary) + parseFloat(salary.hra) + parseFloat(salary.other_allowances);
             const totalMonthlyDeductions = parseFloat(salary.pf);
 
-            // 3. Fetch attendance and leave records for the month
-            const { rows: attendanceRecords } = await client.query(
+            // 3. Fetch all relevant attendance and leave records for the month
+            const { rows: attendanceRows } = await client.query(
                 `SELECT status, record_date FROM attendance_records WHERE employee_id = $1 AND record_date >= $2 AND record_date <= $3`,
                 [employeeId, firstDayOfMonth, lastDayOfMonth]
             );
-            const { rows: leaveRecords } = await client.query(
+            const attendanceMap = new Map(attendanceRows.map(r => [format(new Date(r.record_date), 'yyyy-MM-dd'), r.status]));
+
+            // Corrected query to find any overlapping leave
+            const { rows: leaveRows } = await client.query(
                 `SELECT start_date, end_date, leave_type FROM leave_requests WHERE employee_id = $1 AND status = 'Approved' AND start_date <= $2 AND end_date >= $3`,
                 [employeeId, lastDayOfMonth, firstDayOfMonth]
             );
 
-            // 4. Calculate payable days
-            let payableDays = 0;
-            const leaveDays = new Set<string>();
+            const leaveMap = new Map<string, string>();
+            leaveRows.forEach(leave => {
+                const interval = { start: new Date(leave.start_date), end: new Date(leave.end_date) };
+                eachDayOfInterval(interval).forEach(day => {
+                    if (day.getMonth() === monthIndex) { // Ensure day is within the current month
+                        leaveMap.set(format(day, 'yyyy-MM-dd'), leave.leave_type);
+                    }
+                });
+            });
 
-            // Account for approved leave days within the month
-            leaveRecords.forEach(leave => {
-                const leaveStart = new Date(leave.start_date);
-                const leaveEnd = new Date(leave.end_date);
-                // Only count paid leave types as payable
-                if (['Paid', 'Maternity'].includes(leave.leave_type)) {
-                    for (let d = leaveStart; d <= leaveEnd; d.setDate(d.getDate() + 1)) {
-                        if (d >= firstDayOfMonth && d <= lastDayOfMonth) {
-                           const dateString = d.toISOString().split('T')[0];
-                           if (!leaveDays.has(dateString)) {
-                               payableDays++;
-                               leaveDays.add(dateString);
-                           }
-                        }
+            // 4. Calculate payable days with unified logic
+            let payableDays = 0;
+            const monthDays = eachDayOfInterval({ start: firstDayOfMonth, end: lastDayOfMonth });
+
+            for (const day of monthDays) {
+                const dayString = format(day, 'yyyy-MM-dd');
+                const leaveType = leaveMap.get(dayString);
+
+                if (leaveType && ['Paid', 'Maternity'].includes(leaveType)) {
+                    payableDays += 1;
+                } else if (!leaveType) {
+                    const attendanceStatus = attendanceMap.get(dayString);
+                    if (attendanceStatus === 'Present') {
+                        payableDays += 1;
+                    } else if (attendanceStatus === 'Half-day') {
+                        payableDays += 0.5;
                     }
                 }
-            });
-
-            // Account for attendance records, avoiding double-counting leave days
-            attendanceRecords.forEach(att => {
-                 const attDate = new Date(att.record_date).toISOString().split('T')[0];
-                 if (!leaveDays.has(attDate)) {
-                    if (att.status === 'Present') payableDays++;
-                    if (att.status === 'Half-day') payableDays += 0.5;
-                 }
-            });
+                // Unpaid leave and non-attended days correctly result in 0 addition
+            }
 
             // 5. Pro-rate salary and deductions
             const perDaySalary = totalMonthlySalary / daysInMonth;
@@ -114,14 +119,14 @@ export async function POST(req: Request) {
             await client.query(
                 `INSERT INTO pay_slips (employee_id, month, year, basic_salary, allowances, deductions, net_salary)
                  VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-                [employeeId, month, year, basicComponent, allowancesComponent, finalDeductions, netSalary]
+                [employeeId, monthName, year, basicComponent, allowancesComponent, finalDeductions, netSalary]
             );
             slipsGeneratedCount++;
         }
 
         await client.query('COMMIT');
         
-        return NextResponse.json({ message: `Successfully generated ${slipsGeneratedCount} new payslips for ${month}, ${year}.` });
+        return NextResponse.json({ message: `Successfully generated ${slipsGeneratedCount} new payslips for ${monthName}, ${year}.` });
 
     } catch (error) {
         await client.query('ROLLBACK');
@@ -131,5 +136,3 @@ export async function POST(req: Request) {
         client.release();
     }
 }
-
-    

@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { getDaysInMonth } from 'date-fns';
+import { getDaysInMonth, eachDayOfInterval, format } from 'date-fns';
 import { getRoleFromToken } from '@/app/api/helpers';
 import { z } from 'zod';
 
@@ -62,44 +62,47 @@ export async function POST(req: Request) {
         const totalMonthlyDeductions = parseFloat(salary.pf);
 
         // Fetch attendance and leave records for the month
-        const { rows: attendanceRecords } = await client.query(
+        const { rows: attendanceRows } = await client.query(
             `SELECT status, record_date FROM attendance_records WHERE employee_id = $1 AND record_date >= $2 AND record_date <= $3`,
             [employeeId, firstDayOfMonth, lastDayOfMonth]
         );
+        const attendanceMap = new Map(attendanceRows.map(r => [format(new Date(r.record_date), 'yyyy-MM-dd'), r.status]));
 
-        const { rows: leaveRecords } = await client.query(
+        const { rows: leaveRows } = await client.query(
             `SELECT start_date, end_date, leave_type FROM leave_requests WHERE employee_id = $1 AND status = 'Approved' AND start_date <= $2 AND end_date >= $3`,
             [employeeId, lastDayOfMonth, firstDayOfMonth]
         );
 
+        const leaveMap = new Map<string, string>();
+        leaveRows.forEach(leave => {
+            const interval = { start: new Date(leave.start_date), end: new Date(leave.end_date) };
+            eachDayOfInterval(interval).forEach(day => {
+                if (day.getMonth() === monthIndex) {
+                    leaveMap.set(format(day, 'yyyy-MM-dd'), leave.leave_type);
+                }
+            });
+        });
+
         // Calculate payable days
         let payableDays = 0;
-        const leaveDays = new Set<string>();
+        const monthDays = eachDayOfInterval({ start: firstDayOfMonth, end: lastDayOfMonth });
 
-        leaveRecords.forEach(leave => {
-            const leaveStart = new Date(leave.start_date);
-            const leaveEnd = new Date(leave.end_date);
-            if (['Paid', 'Maternity'].includes(leave.leave_type)) {
-                for (let d = leaveStart; d <= leaveEnd; d.setDate(d.getDate() + 1)) {
-                    if (d >= firstDayOfMonth && d <= lastDayOfMonth) {
-                       const dateString = d.toISOString().split('T')[0];
-                       if (!leaveDays.has(dateString)) {
-                           payableDays++;
-                           leaveDays.add(dateString);
-                       }
-                    }
+        for (const day of monthDays) {
+            const dayString = format(day, 'yyyy-MM-dd');
+            const leaveType = leaveMap.get(dayString);
+
+            if (leaveType && ['Paid', 'Maternity'].includes(leaveType)) {
+                payableDays += 1;
+            } else if (!leaveType) {
+                const attendanceStatus = attendanceMap.get(dayString);
+                if (attendanceStatus === 'Present') {
+                    payableDays += 1;
+                } else if (attendanceStatus === 'Half-day') {
+                    payableDays += 0.5;
                 }
             }
-        });
-
-        attendanceRecords.forEach(att => {
-             const attDate = new Date(att.record_date).toISOString().split('T')[0];
-             if (!leaveDays.has(attDate)) {
-                if (att.status === 'Present') payableDays++;
-                if (att.status === 'Half-day') payableDays += 0.5;
-             }
-        });
-
+        }
+        
         // Pro-rate salary and deductions
         const perDaySalary = totalMonthlySalary / daysInMonth;
         const perDayDeduction = totalMonthlyDeductions / daysInMonth;
