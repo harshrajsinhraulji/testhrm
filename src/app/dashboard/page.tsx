@@ -14,7 +14,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { AdminCharts } from '@/components/dashboard/admin-charts';
 import { EmployeeCharts } from '@/components/dashboard/employee-charts';
 import { EmployeeDashboardCards } from '@/components/dashboard/employee-dashboard-cards';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import type { User, AttendanceRecord, LeaveRequest } from '@/lib/types';
 import { FilteredEmployeeRoster } from '@/components/dashboard/filtered-employee-roster';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -58,6 +58,7 @@ export default function DashboardPage() {
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(isAdminOrHR);
+  const rosterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isAdminOrHR) return;
@@ -151,6 +152,10 @@ export default function DashboardPage() {
   
   const handleDepartmentSelect = (department: string | null) => {
     setSelectedDepartment(department);
+    // Scroll to the roster section when a department is selected
+    if (department) {
+      rosterRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
 
   const rosterInfo = getRosterTitleAndDescription();
@@ -171,7 +176,7 @@ export default function DashboardPage() {
           />
           <AdminCharts onDepartmentSelect={handleDepartmentSelect} selectedDepartment={selectedDepartment} />
           <div className="grid gap-6 lg:grid-cols-5">
-            <Card className="lg:col-span-3">
+            <Card className="lg:col-span-3" ref={rosterRef}>
               <CardHeader>
                 <div className="flex items-center justify-between">
                     <div>
