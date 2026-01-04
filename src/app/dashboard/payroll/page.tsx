@@ -8,16 +8,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
 import type { PaySlip, SalaryStructure } from "@/lib/types";
-import { MoreHorizontal, Pencil, FileText, Users, ReceiptIndianRupee, AreaChart } from "lucide-react";
+import { MoreHorizontal, Pencil, FileText, Users, ReceiptIndianRupee, AreaChart, CircleDot } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { EditSalaryForm } from "@/components/payroll/edit-salary-form";
 import Link from "next/link";
 import {
@@ -32,6 +33,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
@@ -47,6 +50,13 @@ interface DepartmentBreakdown {
     total: number;
 }
 
+interface IndividualGenerationState {
+  isOpen: boolean;
+  employee: SalaryStructure | null;
+  month: string;
+  year: number;
+}
+
 export default function PayrollPage() {
   const { user, role } = useAuth();
   const { toast } = useToast();
@@ -55,8 +65,15 @@ export default function PayrollPage() {
   const [stats, setStats] = useState<PayrollStats | null>(null);
   const [departmentBreakdown, setDepartmentBreakdown] = useState<DepartmentBreakdown[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
   const [selectedStructure, setSelectedStructure] = useState<SalaryStructure | null>(null);
+
+  const [individualGenerateState, setIndividualGenerateState] = useState<IndividualGenerationState>({
+    isOpen: false,
+    employee: null,
+    month: new Date().toLocaleString('default', { month: 'long' }),
+    year: new Date().getFullYear(),
+  });
 
   const fetchPayrollData = async () => {
     if (!user) return;
@@ -94,15 +111,15 @@ export default function PayrollPage() {
 
   const handleEditClick = (structure: SalaryStructure) => {
     setSelectedStructure(structure);
-    setIsFormOpen(true);
+    setIsEditFormOpen(true);
   };
 
   const onFormSubmit = () => {
     fetchPayrollData();
-    setIsFormOpen(false);
+    setIsEditFormOpen(false);
   }
   
-  const handleGenerateSlips = async () => {
+  const handleBulkGenerateSlips = async () => {
     try {
       const res = await fetch('/api/payroll/generate', { method: 'POST' });
       const data = await res.json();
@@ -117,6 +134,45 @@ export default function PayrollPage() {
         title: "Error",
         description: error.message,
       });
+    }
+  }
+
+  const handleIndividualGenerateClick = (employee: SalaryStructure) => {
+    setIndividualGenerateState({
+        ...individualGenerateState,
+        isOpen: true,
+        employee,
+    });
+  }
+
+  const handleIndividualGenerateConfirm = async () => {
+    if (!individualGenerateState.employee) return;
+    try {
+      const res = await fetch('/api/payroll/generate-individual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          employeeId: individualGenerateState.employee.employeeDbId,
+          month: individualGenerateState.month,
+          year: individualGenerateState.year,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || `Failed to generate payslip for ${individualGenerateState.employee.employeeName}.`);
+      
+      toast({
+        title: "Payslip Generated",
+        description: data.message,
+      });
+
+    } catch(error: any) {
+       toast({
+        variant: "destructive",
+        title: "Generation Failed",
+        description: error.message,
+      });
+    } finally {
+      setIndividualGenerateState({ ...individualGenerateState, isOpen: false, employee: null });
     }
   }
 
@@ -142,6 +198,10 @@ export default function PayrollPage() {
      )
   }
 
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const currentYear = new Date().getFullYear();
+  const years = [currentYear, currentYear - 1];
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -160,12 +220,12 @@ export default function PayrollPage() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will generate new payslips for all employees for the current month. This action cannot be undone.
+                  This will generate new payslips for all employees for the current month. Existing slips for this month will not be overridden. This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleGenerateSlips}>Generate</AlertDialogAction>
+                <AlertDialogAction onClick={handleBulkGenerateSlips}>Generate</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -273,6 +333,11 @@ export default function PayrollPage() {
                                                 <Pencil className="mr-2 h-4 w-4" />
                                                 Edit Structure
                                             </DropdownMenuItem>
+                                             <DropdownMenuSeparator />
+                                            <DropdownMenuItem onClick={() => handleIndividualGenerateClick(structure)}>
+                                                <CircleDot className="mr-2 h-4 w-4" />
+                                                Generate Slip
+                                            </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </TableCell>
@@ -289,7 +354,7 @@ export default function PayrollPage() {
                 </CardContent>
             </Card>
 
-            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <Dialog open={isEditFormOpen} onOpenChange={setIsEditFormOpen}>
                  <DialogContent className="sm:max-w-[480px]">
                     <DialogHeader>
                         <DialogTitle>Edit Salary Structure</DialogTitle>
@@ -303,6 +368,47 @@ export default function PayrollPage() {
                             onFormSubmit={onFormSubmit} 
                         />
                     )}
+                </DialogContent>
+            </Dialog>
+
+             <Dialog open={individualGenerateState.isOpen} onOpenChange={(isOpen) => setIndividualGenerateState({...individualGenerateState, isOpen})}>
+                 <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Generate Individual Payslip</DialogTitle>
+                        <DialogDescription>
+                            Generate a payslip for {individualGenerateState.employee?.employeeName} for a specific month. This is useful for final settlements.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="month-select">Month</Label>
+                                <Select value={individualGenerateState.month} onValueChange={(value) => setIndividualGenerateState({...individualGenerateState, month: value})}>
+                                    <SelectTrigger id="month-select">
+                                        <SelectValue placeholder="Select month" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {months.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="year-select">Year</Label>
+                                <Select value={String(individualGenerateState.year)} onValueChange={(value) => setIndividualGenerateState({...individualGenerateState, year: Number(value)})}>
+                                    <SelectTrigger id="year-select">
+                                        <SelectValue placeholder="Select year" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setIndividualGenerateState({...individualGenerateState, isOpen: false})}>Cancel</Button>
+                      <Button onClick={handleIndividualGenerateConfirm}>Generate and Save</Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </>
@@ -347,3 +453,4 @@ export default function PayrollPage() {
     </div>
   );
 }
+
