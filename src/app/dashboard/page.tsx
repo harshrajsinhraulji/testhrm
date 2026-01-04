@@ -20,7 +20,7 @@ import { FilteredEmployeeRoster } from '@/components/dashboard/filtered-employee
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
-import { DailyStatusList } from '@/components/dashboard/daily-status-list';
+import { UpcomingLeaveCard } from '@/components/dashboard/upcoming-leave-card';
 
 
 const getWelcomeContent = (role: string | null, name?: string) => {
@@ -40,7 +40,7 @@ const getWelcomeContent = (role: string | null, name?: string) => {
       return {
         title: `Welcome, ${name}!`,
         description:
-          'Manage your profile, attendance, and leave requests.',
+          'Here is your summary for today. Manage your profile, attendance, and leave requests via the sidebar.',
       };
   }
 };
@@ -161,11 +161,7 @@ export default function DashboardPage() {
                 attendance={attendance}
                 leaveRequests={leaveRequests}
               />
-               <DailyStatusList 
-                employees={employees}
-                attendance={attendance}
-                leaveRequests={leaveRequests}
-              />
+               <AdminCharts onDepartmentSelect={handleDepartmentSelect} selectedDepartment={selectedDepartment} />
               <div ref={rosterRef}>
                 <FilteredEmployeeRoster 
                     department={selectedDepartment}
@@ -175,7 +171,6 @@ export default function DashboardPage() {
               </div>
           </div>
           <div className="lg:col-span-1 space-y-6">
-             <AdminCharts onDepartmentSelect={handleDepartmentSelect} selectedDepartment={selectedDepartment} />
              <Card className="h-full">
                 <CardHeader>
                   <CardTitle>Recent Leave Requests</CardTitle>
@@ -190,9 +185,14 @@ export default function DashboardPage() {
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
-          <EmployeeDashboardCards />
-          <EmployeeCharts />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+                <EmployeeDashboardCards />
+                <EmployeeCharts />
+            </div>
+            <div className="lg:col-span-1 space-y-6">
+                <UpcomingLeaveCard />
+            </div>
         </div>
       )}
     </div>

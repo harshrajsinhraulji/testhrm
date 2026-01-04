@@ -116,7 +116,7 @@ export function AdminCharts({ onDepartmentSelect, selectedDepartment }: AdminCha
       <CardHeader>
         <CardTitle>Headcount by Department</CardTitle>
         <CardDescription>
-          Click a department to filter the employee list below.
+          Click a department to filter the employee roster.
         </CardDescription>
       </CardHeader>
       <CardContent>
