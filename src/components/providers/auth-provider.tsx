@@ -17,7 +17,9 @@ const getStoredUser = (): User | null => {
 const setStoredUser = (user: User | null) => {
   if (typeof window === "undefined") return;
   if (user) {
-    localStorage.setItem("dayflow-user", JSON.stringify(user));
+    // Exclude avatarUrl before saving to localStorage to prevent quota errors
+    const { avatarUrl, ...userToStore } = user;
+    localStorage.setItem("dayflow-user", JSON.stringify(userToStore));
   } else {
     localStorage.removeItem("dayflow-user");
   }
@@ -47,6 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const storedUser = getStoredUser();
     const storedToken = getStoredToken();
     if (storedUser && storedToken) {
+      // The user object from storage won't have an avatarUrl.
+      // Components that need it should fetch it.
       setUser(storedUser);
     }
     setLoading(false);
@@ -67,7 +71,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const { user, token } = await response.json();
         
-        // The API now returns the correct User object shape with the employee DB UUID
         setUser(user);
         setStoredUser(user);
         setStoredToken(token);
@@ -121,11 +124,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             throw new Error("Failed to fetch updated user data.");
         }
         const updatedUser = await res.json();
+        // The full user object with avatar is set in state for immediate use in the app
         setUser(updatedUser);
+        // But only the version without the avatar is stored in localStorage
         setStoredUser(updatedUser);
     } catch (error) {
         console.error("Error refreshing user:", error);
-        // Optional: handle error, maybe log out user if session is invalid
     }
   };
 

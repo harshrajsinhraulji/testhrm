@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { z } from 'zod';
@@ -28,7 +29,7 @@ const employeeUpdateSchema = z.object({
   emergencyContactName: z.string().min(2, "Name is too short").optional(),
   emergencyContactRelationship: z.string().min(2, "Relationship is too short").optional(),
   emergencyContactPhone: z.string().min(10, "Invalid phone number").optional(),
-  avatarUrl: z.string().url().or(z.string().startsWith("data:image/")).optional(),
+  avatarUrl: z.string().url().or(z.string().startsWith("data:image/")).optional().nullable(),
   // Admin & HR fields
   name: z.string().min(2, "Name is too short").optional(),
   department: z.string().optional(),
@@ -85,7 +86,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         if (emergencyContactName) { fieldsToUpdate.push(`emergency_contact_name = $${queryIndex++}`); values.push(emergencyContactName); }
         if (emergencyContactRelationship) { fieldsToUpdate.push(`emergency_contact_relationship = $${queryIndex++}`); values.push(emergencyContactRelationship); }
         if (emergencyContactPhone) { fieldsToUpdate.push(`emergency_contact_phone = $${queryIndex++}`); values.push(emergencyContactPhone); }
-        if (avatarUrl) { fieldsToUpdate.push(`avatar_url = $${queryIndex++}`); values.push(avatarUrl); }
+        if (avatarUrl !== undefined) { fieldsToUpdate.push(`avatar_url = $${queryIndex++}`); values.push(avatarUrl); }
         if (department) { fieldsToUpdate.push(`department = $${queryIndex++}`); values.push(department); }
         if (position) { fieldsToUpdate.push(`position = $${queryIndex++}`); values.push(position); }
         if (role) { fieldsToUpdate.push(`role = $${queryIndex++}`); values.push(role); }
