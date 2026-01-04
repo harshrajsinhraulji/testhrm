@@ -59,7 +59,7 @@ export async function POST(req: Request) {
 
             // 3. Fetch attendance and leave records for the month
             const { rows: attendanceRecords } = await client.query(
-                `SELECT status FROM attendance_records WHERE employee_id = $1 AND record_date >= $2 AND record_date <= $3`,
+                `SELECT status, record_date FROM attendance_records WHERE employee_id = $1 AND record_date >= $2 AND record_date <= $3`,
                 [employeeId, firstDayOfMonth, lastDayOfMonth]
             );
             const { rows: leaveRecords } = await client.query(
@@ -131,3 +131,5 @@ export async function POST(req: Request) {
         client.release();
     }
 }
+
+    
