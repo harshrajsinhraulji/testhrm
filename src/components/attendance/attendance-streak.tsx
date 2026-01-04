@@ -4,7 +4,7 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { AttendanceRecord, AttendanceStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { addDays, format, startOfWeek, getDay, getMonth, startOfMonth } from 'date-fns';
+import { addDays, format, startOfWeek, subDays, getDay, getMonth } from 'date-fns';
 
 interface AttendanceStreakProps {
     employeeId?: string;
@@ -12,35 +12,37 @@ interface AttendanceStreakProps {
 }
 
 const getStatusColor = (status: AttendanceStatus | undefined) => {
-    if (!status) return 'bg-slate-200'; // Muted for no record
+    if (!status) return 'bg-gray-200 dark:bg-gray-800'; // Muted for no record
     switch (status) {
-        case "Present":
-            return 'bg-green-500';
-        case "Half-day":
-            return 'bg-yellow-400';
-        case "Leave":
-            return 'bg-blue-400';
-        case "Absent":
-            return 'bg-red-400';
-        default:
-            return 'bg-slate-200';
+        case "Present": return 'bg-green-500';
+        case "Half-day": return 'bg-yellow-400';
+        case "Leave": return 'bg-blue-400';
+        case "Absent": return 'bg-red-500';
+        default: return 'bg-gray-200 dark:bg-gray-800';
     }
 }
 
 export function AttendanceStreak({ employeeId, attendanceRecords }: AttendanceStreakProps) {
     const today = new Date();
-    const weekCount = 16; 
-    
-    // Start from the beginning of the week, 15 weeks ago, to ensure we have a full grid
-    let startDate = startOfWeek(addDays(today, - (weekCount - 1) * 7), { weekStartsOn: 0 }); // Sunday start
+    const yearAgo = subDays(today, 365);
+    // Start from the beginning of the week that contains the date 365 days ago
+    const startDate = startOfWeek(yearAgo, { weekStartsOn: 0 }); // Sunday start
 
-    const days = Array.from({ length: weekCount * 7 }, (_, i) => {
+    const attendanceMap = new Map<string, AttendanceStatus>();
+    if (employeeId) {
+        for (const record of attendanceRecords) {
+            if (record.employeeId === employeeId) {
+                attendanceMap.set(record.date, record.status);
+            }
+        }
+    }
+
+    const days = Array.from({ length: 371 }, (_, i) => { // ~53 weeks
         const date = addDays(startDate, i);
         const dateString = format(date, 'yyyy-MM-dd');
-        const record = attendanceRecords.find(r => r.employeeId === employeeId && r.date === dateString);
         return {
             date: dateString,
-            status: record?.status,
+            status: attendanceMap.get(dateString),
         };
     });
 
@@ -50,9 +52,11 @@ export function AttendanceStreak({ employeeId, attendanceRecords }: AttendanceSt
     }
 
     const monthLabels = weeks.reduce((acc, week, i) => {
-        const firstDayOfMonth = getDay(startOfMonth(new Date(week[0].date))) === i;
+        const firstDayOfMonth = new Date(week[0].date).getDate() <= 7;
         const monthName = format(new Date(week[0].date), 'MMM');
-        if (!acc.find(m => m.month === monthName)) {
+        const lastMonth = acc.length > 0 ? acc[acc.length-1].month : '';
+        
+        if (firstDayOfMonth && monthName !== lastMonth) {
            acc.push({ month: monthName, index: i });
         }
         return acc;
@@ -72,28 +76,30 @@ export function AttendanceStreak({ employeeId, attendanceRecords }: AttendanceSt
     return (
         <TooltipProvider>
             <div className="flex items-start">
-                <div className="grid grid-rows-7 gap-1.5 text-xs text-muted-foreground pr-2" style={{ paddingTop: '28px'}}>
-                    {dayLabels.map((day, i) => (i % 2 !== 0) && <div key={day} className="h-3">{day}</div>)}
+                <div className="grid grid-rows-7 gap-1.5 text-xs text-muted-foreground pr-2 pt-8">
+                    <div className="h-3">Mon</div>
+                    <div className="h-3 mt-4">Wed</div>
+                    <div className="h-3 mt-4">Fri</div>
                 </div>
-                <div className="relative grid grid-flow-col gap-1.5 overflow-hidden">
+                
+                <div className="relative grid grid-flow-col gap-1.5">
+                    {/* Month Labels */}
+                    {monthLabels.map(({ month, index }) => (
+                         <div key={month} className="absolute text-xs font-semibold" style={{ left: `${index * 18}px`, top: '0' }}>
+                            {month}
+                        </div>
+                    ))}
+                    
+                    {/* Day cells */}
                     {weeks.map((week, weekIndex) => (
-                        <div key={weekIndex} className="grid grid-rows-7 gap-1.5">
-                            {/* Month Label */}
-                            {weekIndex > 0 && format(new Date(week[0].date), 'd') === '1' && (
-                                <div className="absolute text-xs font-semibold" style={{ left: `${weekIndex * 18}px`, top: '0' }}>
-                                    {format(new Date(week[0].date), 'MMM')}
-                                </div>
-                            )}
-                            {weekIndex === 0 && (
-                                <div className="absolute text-xs font-semibold" style={{ left: `0px`, top: '0' }}>
-                                    {format(new Date(week[0].date), 'MMM')}
-                                </div>
-                            )}
-
+                        <div key={weekIndex} className="grid grid-rows-7 gap-1.5 pt-8">
                             {week.map((day, dayIndex) => (
                                 <Tooltip key={day.date}>
                                     <TooltipTrigger asChild>
-                                        <div className={cn("h-3 w-3 rounded-sm", getStatusColor(day.status))} style={{ marginTop: dayIndex === 0 ? '28px' : 0 }} />
+                                        <div className={cn(
+                                            "h-3 w-3 rounded-sm", 
+                                            new Date(day.date) > today ? 'bg-transparent' : getStatusColor(day.status)
+                                         )} />
                                     </TooltipTrigger>
                                     <TooltipContent>
                                         <p>{day.status || 'No Record'} on {format(new Date(day.date), 'MMM dd, yyyy')}</p>
@@ -106,7 +112,7 @@ export function AttendanceStreak({ employeeId, attendanceRecords }: AttendanceSt
             </div>
              <div className="flex justify-end items-center gap-4 text-xs mt-4 text-muted-foreground">
                 <span>Less</span>
-                <div className="h-3 w-3 rounded-sm bg-slate-200" />
+                <div className="h-3 w-3 rounded-sm bg-gray-200 dark:bg-gray-800" />
                 <div className="h-3 w-3 rounded-sm bg-blue-400" />
                 <div className="h-3 w-3 rounded-sm bg-yellow-400" />
                 <div className="h-3 w-3 rounded-sm bg-green-500" />
@@ -115,3 +121,4 @@ export function AttendanceStreak({ employeeId, attendanceRecords }: AttendanceSt
         </TooltipProvider>
     );
 }
+

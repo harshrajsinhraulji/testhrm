@@ -27,6 +27,8 @@ import { useToast } from "@/hooks/use-toast";
 import { AttendanceStreak } from "@/components/attendance/attendance-streak";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 const getStatusClasses = (status: AttendanceRecord['status']) => {
   switch (status) {
@@ -47,29 +49,33 @@ export default function AttendancePage() {
   const { user, role } = useAuth();
   const { toast } = useToast();
   const today = new Date().toISOString().split("T")[0];
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [allAttendanceRecords, setAllAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [employees, setEmployees] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [isClient, setIsClient] = useState(false);
+  
+  const isAdminOrHR = role === 'Admin' || role === 'HR';
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(user?.id);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  const fetchAttendance = useCallback(async () => {
-    if (!user) return;
+  useEffect(() => {
+    if (user?.id) {
+        setSelectedEmployeeId(user.id);
+    }
+  }, [user]);
+
+  const fetchAttendanceAndEmployees = useCallback(async () => {
     setLoading(true);
     try {
-      const url = role === 'Admin' || role === 'HR'
-        ? '/api/attendance'
-        : `/api/attendance?employeeId=${user.id}`;
-      
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to fetch attendance data.");
-      const data = await res.json();
-      setAttendanceRecords(data);
+      const attendanceRes = await fetch('/api/attendance');
+      if (!attendanceRes.ok) throw new Error("Failed to fetch attendance data.");
+      const attendanceData = await attendanceRes.json();
+      setAllAttendanceRecords(attendanceData);
 
-      if (role === 'Admin' || role === 'HR') {
+      if (isAdminOrHR) {
         const empRes = await fetch('/api/employees');
         if(!empRes.ok) throw new Error("Failed to fetch employees.");
         const empData = await empRes.json();
@@ -83,20 +89,19 @@ export default function AttendancePage() {
         }));
         setEmployees(users);
       }
-
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: error.message });
     } finally {
       setLoading(false);
     }
-  }, [user, role, toast]);
+  }, [isAdminOrHR, toast]);
 
   useEffect(() => {
-    fetchAttendance();
-  }, [fetchAttendance]);
+    fetchAttendanceAndEmployees();
+  }, [fetchAttendanceAndEmployees]);
 
-  const todayUserRecord = attendanceRecords.find(a => a.employeeId === user?.id && a.date === today);
-
+  const personalAttendanceRecords = allAttendanceRecords.filter(a => a.employeeId === user?.id);
+  const todayUserRecord = personalAttendanceRecords.find(a => a.date === today);
   const isCheckedIn = !!(todayUserRecord && todayUserRecord.checkIn && !todayUserRecord.checkOut);
 
   const handleAttendanceAction = async (action: 'checkin' | 'checkout') => {
@@ -113,9 +118,8 @@ export default function AttendancePage() {
         title: `Successfully ${action === 'checkin' ? 'Checked In' : 'Checked Out'}`,
         description: action === 'checkin' ? "Your attendance is marked." : "Have a great day!",
       });
-
-      // Refetch data to update UI
-      fetchAttendance();
+      
+      fetchAttendanceAndEmployees();
 
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: error.message });
@@ -123,10 +127,10 @@ export default function AttendancePage() {
   };
 
   const getEmployeeName = (employeeId: string) => {
-    return employees.find(e => e.id === employeeId)?.name || 'Unknown';
+    return employees.find(e => e.id === employeeId)?.name || user?.name || 'Unknown';
   }
   
-  const dailyRecords = attendanceRecords.filter(r => r.date === today);
+  const dailyRecords = allAttendanceRecords.filter(r => r.date === today);
 
   return (
     <div>
@@ -134,16 +138,14 @@ export default function AttendancePage() {
         title="Attendance"
         description="Track and manage employee attendance."
       >
-        {role === 'Employee' && (
-             <div className="flex items-center gap-2">
-                <Button onClick={() => handleAttendanceAction('checkin')} disabled={isCheckedIn || !!todayUserRecord?.checkIn}>
-                    Check In
-                </Button>
-                <Button onClick={() => handleAttendanceAction('checkout')} variant="outline" disabled={!isCheckedIn || !!todayUserRecord?.checkOut}>
-                    Check Out
-                </Button>
-            </div>
-        )}
+        <div className="flex items-center gap-2">
+            <Button onClick={() => handleAttendanceAction('checkin')} disabled={isCheckedIn || !!todayUserRecord?.checkIn}>
+                Check In
+            </Button>
+            <Button onClick={() => handleAttendanceAction('checkout')} variant="outline" disabled={!isCheckedIn || !!todayUserRecord?.checkOut}>
+                Check Out
+            </Button>
+        </div>
       </PageHeader>
       
       {!isClient ? (
@@ -155,7 +157,7 @@ export default function AttendancePage() {
         <Tabs defaultValue="daily">
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="daily">Daily View</TabsTrigger>
-            <TabsTrigger value="weekly">Weekly Streak</TabsTrigger>
+            <TabsTrigger value="weekly">Yearly Streak</TabsTrigger>
           </TabsList>
           <TabsContent value="daily">
             <Card>
@@ -168,37 +170,52 @@ export default function AttendancePage() {
               <CardContent>
                 {loading ? (
                   <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+                    {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        {role !== 'Employee' && <TableHead>Employee</TableHead>}
-                        <TableHead>Status</TableHead>
+                        <TableHead>{isAdminOrHR ? "Employee" : "Status"}</TableHead>
+                        {isAdminOrHR && <TableHead>Status</TableHead>}
                         <TableHead>Check In</TableHead>
                         <TableHead>Check Out</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {(role === 'Employee' ? attendanceRecords.filter(r=>r.date === today) : dailyRecords).length > 0 ? 
-                      (role === 'Employee' ? attendanceRecords.filter(r=>r.date === today) : dailyRecords).map((record) => (
-                        <TableRow key={record.id}>
-                          {role !== 'Employee' && <TableCell className="font-medium">{getEmployeeName(record.employeeId)}</TableCell>}
-                          <TableCell>
-                            <Badge className={cn("border", getStatusClasses(record.status))}>
-                              {record.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{record.checkIn || "N/A"}</TableCell>
-                          <TableCell>{record.checkOut || "N/A"}</TableCell>
-                        </TableRow>
-                      )) : (
-                        <TableRow>
-                            <TableCell colSpan={role !== 'Employee' ? 4 : 3} className="h-24 text-center">
-                                No attendance records for today.
-                            </TableCell>
-                        </TableRow>
+                      {isAdminOrHR ? (
+                         dailyRecords.length > 0 ? dailyRecords.map((record) => (
+                            <TableRow key={record.id}>
+                              <TableCell className="font-medium">{getEmployeeName(record.employeeId)}</TableCell>
+                              <TableCell>
+                                <Badge className={cn("border", getStatusClasses(record.status))}>
+                                  {record.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{record.checkIn || "N/A"}</TableCell>
+                              <TableCell>{record.checkOut || "N/A"}</TableCell>
+                            </TableRow>
+                         )) : (
+                           <TableRow>
+                                <TableCell colSpan={4} className="h-24 text-center">No records for today.</TableCell>
+                           </TableRow>
+                         )
+                      ) : (
+                         personalAttendanceRecords.filter(r => r.date === today).length > 0 ? personalAttendanceRecords.filter(r => r.date === today).map((record) => (
+                             <TableRow key={record.id}>
+                                <TableCell>
+                                    <Badge className={cn("border", getStatusClasses(record.status))}>
+                                        {record.status}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell>{record.checkIn || "N/A"}</TableCell>
+                                <TableCell>{record.checkOut || "N/A"}</TableCell>
+                            </TableRow>
+                         )) : (
+                            <TableRow>
+                                <TableCell colSpan={3} className="h-24 text-center">Your attendance is not marked for today.</TableCell>
+                            </TableRow>
+                         )
                       )}
                     </TableBody>
                   </Table>
@@ -209,15 +226,31 @@ export default function AttendancePage() {
           <TabsContent value="weekly">
           <Card>
               <CardHeader>
-                <CardTitle>Weekly Attendance Streak</CardTitle>
+                <CardTitle>Yearly Attendance Streak</CardTitle>
                 <CardDescription>
-                  Your attendance summary for the last few weeks.
+                  Attendance summary for the last 365 days.
                 </CardDescription>
+                 {isAdminOrHR && (
+                    <div className="pt-4 max-w-sm space-y-2">
+                        <Label htmlFor="employee-select">View Streak For</Label>
+                        <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+                            <SelectTrigger id="employee-select">
+                                <SelectValue placeholder="Select an employee" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {employees.map(e => (
+                                    <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
               </CardHeader>
-              <CardContent>
-                  <AttendanceStreak 
-                      employeeId={user?.id}
-                      attendanceRecords={attendanceRecords}
+              <CardContent className="overflow-x-auto">
+                  <AttendanceStreak
+                      key={selectedEmployeeId} // Force re-render when employee changes
+                      employeeId={selectedEmployeeId}
+                      attendanceRecords={isAdminOrHR ? allAttendanceRecords : personalAttendanceRecords}
                   />
               </CardContent>
             </Card>
@@ -227,3 +260,4 @@ export default function AttendancePage() {
     </div>
   );
 }
+
