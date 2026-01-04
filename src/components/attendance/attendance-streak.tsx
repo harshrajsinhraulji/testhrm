@@ -53,12 +53,14 @@ export function AttendanceStreak({ data }: AttendanceStreakProps) {
             const status = attendanceMap.get(dateString);
 
             if (date <= today) {
+                // A streak is only maintained by being "Present". Any other status breaks it.
                 if (status === "Present") {
                     currentStreak++;
                 } else {
                     maxStreak = Math.max(maxStreak, currentStreak);
-                    currentStreak = 0;
+                    currentStreak = 0; // Reset for any other status (Leave, Absent, Half-day, or no record)
                 }
+
                 const countKey = status || "No Record";
                 localStatusCounts[countKey] = (localStatusCounts[countKey] || 0) + 1;
             }
