@@ -137,6 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     signup,
     refreshUser,
+    getToken: getStoredToken,
   };
 
   return (

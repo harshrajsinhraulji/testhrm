@@ -58,7 +58,7 @@ interface IndividualGenerationState {
 }
 
 export default function PayrollPage() {
-  const { user, role } = useAuth();
+  const { user, role, getToken } = useAuth();
   const { toast } = useToast();
   const [paySlips, setPaySlips] = useState<PaySlip[]>([]);
   const [salaryStructures, setSalaryStructures] = useState<SalaryStructure[]>([]);
@@ -79,15 +79,18 @@ export default function PayrollPage() {
     if (!user) return;
     setLoading(true);
     try {
+      const token = getToken();
+      const headers = { 'Authorization': `Bearer ${token}` };
+
       if (role === 'Admin' || role === 'HR') {
-        const res = await fetch('/api/payroll');
+        const res = await fetch('/api/payroll', { headers });
         if (!res.ok) throw new Error("Failed to fetch salary structures.");
         const data = await res.json();
         setSalaryStructures(data.salaryStructures);
         setStats(data.stats);
         setDepartmentBreakdown(data.departmentBreakdown);
       } else {
-        const res = await fetch(`/api/payroll?employeeId=${user.employeeDetails?.id}`);
+        const res = await fetch(`/api/payroll?employeeId=${user.employeeDetails?.id}`, { headers });
         if (!res.ok) throw new Error("Failed to fetch your payslips.");
         const data = await res.json();
         setPaySlips(data);
@@ -121,7 +124,11 @@ export default function PayrollPage() {
   
   const handleBulkGenerateSlips = async () => {
     try {
-      const res = await fetch('/api/payroll/generate', { method: 'POST' });
+      const token = getToken();
+      const res = await fetch('/api/payroll/generate', { 
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to generate payslips.");
       toast({
@@ -148,9 +155,13 @@ export default function PayrollPage() {
   const handleIndividualGenerateConfirm = async () => {
     if (!individualGenerateState.employee) return;
     try {
+      const token = getToken();
       const res = await fetch('/api/payroll/generate-individual', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ 
           employeeId: individualGenerateState.employee.employeeDbId,
           month: individualGenerateState.month,
@@ -453,4 +464,3 @@ export default function PayrollPage() {
     </div>
   );
 }
-
