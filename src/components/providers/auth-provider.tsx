@@ -1,4 +1,3 @@
-
 "use client";
 
 import { AuthContext } from "@/hooks/use-auth";
@@ -55,16 +54,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, pass: string): Promise<User | null> => {
     // Hardcoded admin login for testing
-    if (email === 'admin@dayflow.com' && pass === 'admin') {
+    if (email === 'h.raulji2005@gmail.com' && pass === 'harsh123') {
       const adminAvatar = PlaceHolderImages.find(img => img.id === 'admin-avatar');
       const adminUser: User = {
-        id: 'admin-user-static',
-        name: 'Sarah Chen (Admin)',
-        email: 'admin@dayflow.com',
+        id: 'c39a3f4b-2d33-41a4-9275-10a1334c6e99',
+        name: 'Harsh Raulji',
+        email: 'h.raulji2005@gmail.com',
         role: 'Admin',
         avatarUrl: adminAvatar?.imageUrl || 'https://placehold.co/100x100',
         employeeDetails: {
-          id: '00000000-0000-0000-0000-000000000000', // Mock UUID for admin
+          id: 'c39a3f4b-2d33-41a4-9275-10a1334c6e99', // Mock UUID for admin
           employeeId: 'DF-ADMIN',
           department: 'Management',
           position: 'System Administrator',
@@ -78,9 +77,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           },
         }
       };
+      
+      // Create a mock JWT for the hardcoded admin
+      const mockAdminToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjMzlhM2Y0Yi0yZDMzLTQxYTQtOTI3NS0xMGEzMzM0YzZlOTkiLCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3MjE0ODQwMDAsImV4cCI6MTc4NDU1NjAwMH0.fake-token-signature-for-admin';
       setUser(adminUser);
       setStoredUser(adminUser);
-      setStoredToken('static-admin-token');
+      setStoredToken(mockAdminToken);
       return adminUser;
     }
 
@@ -142,8 +144,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("Cannot refresh user without an ID.");
         return;
     }
+    const token = getStoredToken();
     try {
-        const res = await fetch(`/api/employees/${user.employeeDetails.id}`);
+        const res = await fetch(`/api/employees/${user.employeeDetails.id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (!res.ok) {
             throw new Error("Failed to fetch updated user data.");
         }

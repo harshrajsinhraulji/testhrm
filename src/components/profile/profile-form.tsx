@@ -25,7 +25,7 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "../ui/separator";
-import type { User } from "@/lib/types";
+import type { User, UserRole } from "@/lib/types";
 import { departments, positionsByDepartment } from "@/lib/departments-config";
 import {
   AlertDialog,
@@ -54,6 +54,7 @@ const profileSchema = z.object({
     .or(z.literal("")),
   department: z.string().optional(),
   position: z.string().optional(),
+  role: z.custom<UserRole>().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -64,7 +65,7 @@ interface ProfileFormProps {
 }
 
 export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
-  const { user: loggedInUser, role, refreshUser } = useAuth();
+  const { user: loggedInUser, role: loggedInUserRole, refreshUser } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -73,10 +74,11 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
   const userToEdit = employee || loggedInUser;
   const isSelf = loggedInUser?.id === userToEdit?.id;
 
-  const canEditPersonalInfo = role === "Admin" || isSelf;
-  const canEditEmploymentInfo = role === "Admin" || role === "HR";
+  const canEditPersonalInfo = loggedInUserRole === "Admin" || isSelf;
+  const canEditEmploymentInfo = loggedInUserRole === "Admin" || loggedInUserRole === "HR";
   const isFullNameDisabled =
-    (role === "HR" && !isSelf) || (role !== "Admin" && !isSelf);
+    (loggedInUserRole === "HR" && !isSelf) || (loggedInUserRole !== "Admin" && !isSelf);
+  const isAdmin = loggedInUserRole === "Admin";
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -90,6 +92,7 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
       emergencyContactPhone: "",
       department: "",
       position: "",
+      role: "Employee",
     },
   });
 
@@ -110,6 +113,7 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
           userToEdit.employeeDetails?.emergencyContact.phone || "",
         department: userToEdit.employeeDetails?.department || "",
         position: userToEdit.employeeDetails?.position || "",
+        role: userToEdit.role || "Employee",
       });
     }
   }, [userToEdit, form]);
@@ -177,7 +181,12 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
         position: values.position,
       };
     }
-     delete payload.email;
+    
+    if (isAdmin) {
+      payload = { ...payload, role: values.role };
+    }
+    
+    delete (payload as any).email;
 
     try {
       const res = await fetch(
@@ -318,8 +327,8 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
               />
             </div>
           </div>
-
-          {(role === "Admin" || role === "HR") && (
+          
+          {(canEditEmploymentInfo) && (
             <>
               <Separator />
               <div>
@@ -394,6 +403,46 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
               </div>
             </>
           )}
+
+          {isAdmin && (
+            <>
+                <Separator />
+                <div>
+                     <h3 className="text-lg font-medium mb-4">
+                        Admin Controls
+                    </h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="role"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>User Role</FormLabel>
+                                <Select
+                                value={field.value}
+                                onValueChange={field.onChange}
+                                disabled={!isAdmin}
+                                >
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Select a role" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="Employee">Employee</SelectItem>
+                                    <SelectItem value="HR">HR</SelectItem>
+                                    <SelectItem value="Admin">Admin</SelectItem>
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                    </div>
+                </div>
+            </>
+          )}
+
 
           <div className="flex justify-end">
             <Button

@@ -2,6 +2,24 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { z } from 'zod';
 import { getPredefinedSalary } from '@/lib/salary-config';
+import jwt from 'jsonwebtoken';
+import type { UserRole } from '@/lib/types';
+
+
+// Helper to decode JWT and get user role
+const getRoleFromToken = (req: Request): UserRole | null => {
+    const authHeader = req.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1];
+    if (!token) return null;
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-key') as { userId: string, role: UserRole };
+        return decoded.role;
+    } catch (error) {
+        return null;
+    }
+}
+
 
 // Schema for validating the update payload
 const employeeUpdateSchema = z.object({
@@ -11,16 +29,21 @@ const employeeUpdateSchema = z.object({
   emergencyContactRelationship: z.string().min(2, "Relationship is too short").optional(),
   emergencyContactPhone: z.string().min(10, "Invalid phone number").optional(),
   avatarUrl: z.string().url().or(z.string().startsWith("data:image/")).optional(),
-  // Admin-only fields
+  // Admin & HR fields
   name: z.string().min(2, "Name is too short").optional(),
   department: z.string().optional(),
   position: z.string().optional(),
+  // Admin-only fields
+  role: z.enum(['Admin', 'HR', 'Employee']).optional(),
 });
 
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
     const client = await db.connect();
     try {
+        // First, verify the role of the user making the request
+        const requestingUserRole = getRoleFromToken(req);
+
         const { id } = params; // Employee UUID from the URL
         const body = await req.json();
 
@@ -32,8 +55,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         const {
             contactNumber, address, emergencyContactName,
             emergencyContactRelationship, emergencyContactPhone,
-            name, avatarUrl, department, position
+            name, avatarUrl, department, position, role
         } = validation.data;
+
+        // Security Check: Only Admins can change the role
+        if (role && requestingUserRole !== 'Admin') {
+            return NextResponse.json({ message: 'Forbidden: Only admins can change user roles.' }, { status: 403 });
+        }
+
 
         await client.query('BEGIN');
 
@@ -59,6 +88,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         if (avatarUrl) { fieldsToUpdate.push(`avatar_url = $${queryIndex++}`); values.push(avatarUrl); }
         if (department) { fieldsToUpdate.push(`department = $${queryIndex++}`); values.push(department); }
         if (position) { fieldsToUpdate.push(`position = $${queryIndex++}`); values.push(position); }
+        if (role) { fieldsToUpdate.push(`role = $${queryIndex++}`); values.push(role); }
 
         if (fieldsToUpdate.length === 0) {
             await client.query('ROLLBACK');
