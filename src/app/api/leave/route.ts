@@ -92,7 +92,7 @@ export async function PATCH(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
-        const { status } = await req.json();
+        const { status, comments } = await req.json();
 
         if (!id || !status) {
             return NextResponse.json({ message: 'Missing request ID or status' }, { status: 400 });
@@ -101,11 +101,18 @@ export async function PATCH(req: Request) {
         if (!['Approved', 'Rejected'].includes(status)) {
             return NextResponse.json({ message: 'Invalid status value' }, { status: 400 });
         }
+        
+        let query, params;
 
-        const { rows } = await db.query(
-            'UPDATE leave_requests SET status = $1 WHERE id = $2 RETURNING *',
-            [status, id]
-        );
+        if (status === 'Rejected') {
+            query = 'UPDATE leave_requests SET status = $1, admin_comments = $2 WHERE id = $3 RETURNING *';
+            params = [status, comments, id];
+        } else {
+            query = 'UPDATE leave_requests SET status = $1 WHERE id = $2 RETURNING *';
+            params = [status, id];
+        }
+
+        const { rows } = await db.query(query, params);
 
         if (rows.length === 0) {
             return NextResponse.json({ message: 'Leave request not found' }, { status: 404 });

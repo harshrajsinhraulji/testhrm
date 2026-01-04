@@ -20,13 +20,12 @@ import {
 } from '@/components/ui/table';
 import { useAuth } from '@/hooks/use-auth';
 import type { LeaveRequest, LeaveStatus } from '@/lib/types';
-import { PlusCircle, MoreHorizontal, Eye, Check, X, Pencil } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Eye, Check, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { useState, useEffect, useCallback } from 'react';
 import { LeaveRequestForm } from '@/components/leave/leave-request-form';
@@ -134,8 +133,14 @@ export default function LeavePage() {
   };
   
   const handleRejectionSubmit = () => {
-    if (selectedRequest) {
+    if (selectedRequest && rejectionComments) {
       handleStatusUpdate(selectedRequest.id, 'Rejected', rejectionComments);
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Comment Required",
+            description: "Please provide a reason for rejecting the request."
+        })
     }
   };
 
@@ -221,46 +226,22 @@ export default function LeavePage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => handleViewDetailsClick(request)}
-                              >
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Details
-                              </DropdownMenuItem>
-                              {(role === 'Admin' || role === 'HR') &&
-                                request.status === 'Pending' && (
-                                  <>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                      className="text-green-600 focus:text-green-600"
-                                      onClick={() =>
-                                        handleStatusUpdate(request.id, 'Approved')
-                                      }
-                                    >
-                                      <Check className="mr-2 h-4 w-4" />
-                                      Approve
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      className="text-red-600 focus:text-red-600"
-                                      onClick={() =>
-                                        handleRejectClick(request)
-                                      }
-                                    >
-                                      <X className="mr-2 h-4 w-4" />
-                                      Reject
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {role !== 'Employee' && request.status === 'Pending' ? (
+                            <div className='flex gap-2 justify-end'>
+                               <Button size="sm" variant="outline" className="h-8" onClick={() => handleStatusUpdate(request.id, 'Approved')}>
+                                <Check className="mr-2 h-4 w-4" /> Approve
+                               </Button>
+                               <Button size="sm" variant="destructive" className="h-8" onClick={() => handleRejectClick(request)}>
+                                <X className="mr-2 h-4 w-4" /> Reject
+                               </Button>
+                            </div>
+                          ) : (
+                            <div className='flex justify-end'>
+                                <Button size="sm" variant="ghost" className="h-8" onClick={() => handleViewDetailsClick(request)}>
+                                    <Eye className="mr-2 h-4 w-4" /> View
+                                </Button>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))
@@ -351,11 +332,11 @@ export default function LeavePage() {
           <DialogHeader>
             <DialogTitle>Reject Leave Request</DialogTitle>
             <DialogDescription>
-                Provide comments for rejecting {selectedRequest?.employeeName}'s request.
+                Provide comments for rejecting {selectedRequest?.employeeName}'s request. This is required.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-2">
-            <Label htmlFor="rejection-comments">Comments (Optional)</Label>
+            <Label htmlFor="rejection-comments">Comments</Label>
             <Textarea 
               id="rejection-comments"
               placeholder="e.g., Request overlaps with project deadline."
