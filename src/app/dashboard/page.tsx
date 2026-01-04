@@ -212,7 +212,7 @@ export default function DashboardPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <RecentLeaveRequests />
+                <RecentLeaveRequests employees={employees} />
               </CardContent>
             </Card>
           </div>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/use-auth";
-import type { LeaveRequest } from "@/lib/types";
+import type { LeaveRequest, User } from "@/lib/types";
 import { Skeleton } from "../ui/skeleton";
 import { Button } from "../ui/button";
 import Link from "next/link";
@@ -15,8 +15,12 @@ const statusColors: { [key: string]: string } = {
     Rejected: "bg-red-500",
 };
 
+interface RecentLeaveRequestsProps {
+    employees: User[];
+}
 
-export function RecentLeaveRequests() {
+
+export function RecentLeaveRequests({ employees }: RecentLeaveRequestsProps) {
     const { role } = useAuth();
     const [requests, setRequests] = useState<LeaveRequest[]>([]);
     const [loading, setLoading] = useState(true);
@@ -48,6 +52,10 @@ export function RecentLeaveRequests() {
         
         fetchRecentLeaveRequests();
     }, [role]);
+    
+    const getEmployeeAvatar = (employeeId: string) => {
+        return employees.find(e => e.id === employeeId)?.avatarUrl;
+    };
 
 
     if (role !== "Admin" && role !== "HR") {
@@ -94,7 +102,7 @@ export function RecentLeaveRequests() {
             {requests.map((request) => (
                 <div key={request.id} className="flex items-center">
                     <Avatar className="h-9 w-9">
-                        <AvatarImage src={`https://picsum.photos/seed/${request.employeeName.split(' ')[0]}/100/100`} alt="Avatar" />
+                        <AvatarImage src={getEmployeeAvatar(request.employeeId)} alt="Avatar" />
                         <AvatarFallback>{request.employeeName.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="ml-4 space-y-1">
