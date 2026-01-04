@@ -23,42 +23,15 @@ const chartConfig = {
   count: {
     label: "Employees",
   },
-  Engineering: {
-    label: "Engineering",
-    color: "hsl(var(--chart-1))", // Primary purple
-  },
-  Product: {
-    label: "Product",
-    color: "hsl(260, 50%, 60%)", // Different shade of purple
-  },
-  Design: {
-    label: "Design",
-    color: "hsl(230, 60%, 65%)", // A nice blue
-  },
-  Sales: {
-    label: "Sales",
-    color: "hsl(205, 55%, 55%)", // A slightly different blue
-  },
-  Marketing: {
-    label: "Marketing",
-    color: "hsl(180, 50%, 50%)", // Teal
-  },
-  "Human Resources": {
-    label: "Human Resources",
-    color: "hsl(160, 40%, 50%)", // Greenish-teal
-  },
-  Finance: {
-    label: "Finance",
-    color: "hsl(var(--chart-2))", // Theme green
-  },
-  "Customer Support": {
-    label: "Customer Support",
-    color: "hsl(220, 15%, 65%)", // Neutral gray/blue
-  },
-   Unassigned: {
-    label: "Unassigned",
-    color: "hsl(var(--muted))",
-  },
+  Engineering: { label: "Engineering", color: "hsl(262 80% 50%)" },
+  Product: { label: "Product", color: "hsl(222 80% 50%)" },
+  Design: { label: "Design", color: "hsl(198 80% 50%)" },
+  Sales: { label: "Sales", color: "hsl(178 70% 40%)" },
+  Marketing: { label: "Marketing", color: "hsl(150 70% 40%)" },
+  "Human Resources": { label: "Human Resources", color: "hsl(30 80% 50%)" },
+  Finance: { label: "Finance", color: "hsl(350 80% 55%)" },
+  "Customer Support": { label: "Customer Support", color: "hsl(220 15% 65%)" },
+  Unassigned: { label: "Unassigned", color: "hsl(var(--muted))" },
 } satisfies ChartConfig;
 
 interface AdminChartsProps {
@@ -116,7 +89,7 @@ export function AdminCharts({ onDepartmentSelect, selectedDepartment }: AdminCha
     return Object.entries(counts).map(([department, count]) => ({
       department,
       count,
-      fill: `var(--color-${department.replace(/[\s/]/g, "")})`
+      fill: `var(--color-${department})`
     }));
   }, [employees]);
 
@@ -171,6 +144,9 @@ export function AdminCharts({ onDepartmentSelect, selectedDepartment }: AdminCha
               axisLine={false}
               className="text-sm"
               width={120}
+              tickFormatter={(value) =>
+                chartConfig[value as keyof typeof chartConfig]?.label
+              }
             />
             <ChartTooltip
               cursor={false}
@@ -178,9 +154,9 @@ export function AdminCharts({ onDepartmentSelect, selectedDepartment }: AdminCha
             />
             <Bar dataKey="count" radius={5}>
               {departmentData.map((entry) => (
-                <Cell 
-                    key={entry.department} 
-                    fill={entry.fill} 
+                <Cell
+                    key={entry.department}
+                    fill={entry.fill}
                     className={cn(
                         "cursor-pointer",
                         selectedDepartment && selectedDepartment !== entry.department && "opacity-50"
