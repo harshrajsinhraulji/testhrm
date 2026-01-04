@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -125,7 +126,7 @@ export function EmployeeDashboardCards() {
 
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       {cardData.map((card) => (
-        <Card key={card.title} className="flex flex-col">
+        <Card key={card.title} className="flex flex-col transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
             <CardHeader>
                 <div className="flex items-start justify-between">
                     <div className="grid gap-1">

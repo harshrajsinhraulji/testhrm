@@ -118,7 +118,7 @@ export function EmployeeRoster() {
               </TableHeader>
               <TableBody>
                   {filteredEmployees.length > 0 ? filteredEmployees.map((employee) => (
-                      <TableRow key={employee.id}>
+                      <TableRow key={employee.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => handleViewProfile(employee.id)}>
                           <TableCell>
                               <div className="flex items-center gap-3">
                                   <Avatar className="h-9 w-9">
@@ -136,7 +136,7 @@ export function EmployeeRoster() {
                               <Badge variant={employee.role === 'Admin' ? 'default' : 'secondary'}>{employee.role}</Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button variant="outline" size="sm" onClick={() => handleViewProfile(employee.id)}>
+                            <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleViewProfile(employee.id); }}>
                                   <Eye className="mr-2 h-4 w-4" />
                                   View
                             </Button>
