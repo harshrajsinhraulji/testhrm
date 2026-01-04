@@ -66,7 +66,6 @@ export async function POST(req: Request) {
             );
             const attendanceMap = new Map(attendanceRows.map(r => [format(new Date(r.record_date), 'yyyy-MM-dd'), r.status]));
 
-            // Corrected query to find any overlapping leave
             const { rows: leaveRows } = await client.query(
                 `SELECT start_date, end_date, leave_type FROM leave_requests WHERE employee_id = $1 AND status = 'Approved' AND start_date <= $2 AND end_date >= $3`,
                 [employeeId, lastDayOfMonth, firstDayOfMonth]
@@ -82,25 +81,24 @@ export async function POST(req: Request) {
                 });
             });
 
-            // 4. Calculate payable days with unified logic
+            // 4. Calculate payable days
             let payableDays = 0;
             const monthDays = eachDayOfInterval({ start: firstDayOfMonth, end: lastDayOfMonth });
 
             for (const day of monthDays) {
                 const dayString = format(day, 'yyyy-MM-dd');
-                const leaveType = leaveMap.get(dayString);
-
-                if (leaveType && ['Paid', 'Maternity'].includes(leaveType)) {
+                const isPaidLeave = leaveMap.has(dayString) && ['Paid', 'Maternity'].includes(leaveMap.get(dayString)!);
+                
+                if (isPaidLeave) {
                     payableDays += 1;
-                } else if (!leaveType) {
-                    const attendanceStatus = attendanceMap.get(dayString);
-                    if (attendanceStatus === 'Present') {
+                } else if (attendanceMap.has(dayString)) {
+                    const status = attendanceMap.get(dayString);
+                    if (status === 'Present') {
                         payableDays += 1;
-                    } else if (attendanceStatus === 'Half-day') {
+                    } else if (status === 'Half-day') {
                         payableDays += 0.5;
                     }
                 }
-                // Unpaid leave and non-attended days correctly result in 0 addition
             }
 
             // 5. Pro-rate salary and deductions

@@ -89,15 +89,15 @@ export async function POST(req: Request) {
 
         for (const day of monthDays) {
             const dayString = format(day, 'yyyy-MM-dd');
-            const leaveType = leaveMap.get(dayString);
-
-            if (leaveType && ['Paid', 'Maternity'].includes(leaveType)) {
+            const isPaidLeave = leaveMap.has(dayString) && ['Paid', 'Maternity'].includes(leaveMap.get(dayString)!);
+            
+            if (isPaidLeave) {
                 payableDays += 1;
-            } else if (!leaveType) {
-                const attendanceStatus = attendanceMap.get(dayString);
-                if (attendanceStatus === 'Present') {
+            } else if (attendanceMap.has(dayString)) {
+                const status = attendanceMap.get(dayString);
+                if (status === 'Present') {
                     payableDays += 1;
-                } else if (attendanceStatus === 'Half-day') {
+                } else if (status === 'Half-day') {
                     payableDays += 0.5;
                 }
             }
