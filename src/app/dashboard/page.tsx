@@ -20,6 +20,7 @@ import { FilteredEmployeeRoster } from '@/components/dashboard/filtered-employee
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
+import { DailyStatusList } from '@/components/dashboard/daily-status-list';
 
 
 const getWelcomeContent = (role: string | null, name?: string) => {
@@ -159,6 +160,13 @@ export default function DashboardPage() {
             attendance={attendance}
             leaveRequests={leaveRequests}
           />
+
+          <DailyStatusList 
+            employees={employees}
+            attendance={attendance}
+            leaveRequests={leaveRequests}
+          />
+
           <div className="grid gap-6 lg:grid-cols-5">
               <div className="lg:col-span-3">
                   <AdminCharts onDepartmentSelect={handleDepartmentSelect} selectedDepartment={selectedDepartment} />
