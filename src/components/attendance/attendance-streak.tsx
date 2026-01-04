@@ -77,7 +77,7 @@ export function AttendanceStreak({ data }: AttendanceStreakProps) {
                 <div className="relative grid grid-flow-col gap-1">
                     {/* Month Labels */}
                     {monthLabels.map(({ month, index }) => (
-                         <div key={month} className="absolute text-xs font-semibold -top-5" style={{ left: `${index * 16}px` }}>
+                         <div key={`${month}-${index}`} className="absolute text-xs font-semibold -top-5" style={{ left: `${index * 16}px` }}>
                             {month}
                         </div>
                     ))}
