@@ -23,16 +23,20 @@ const chartConfig = {
   count: {
     label: "Employees",
   },
-  Engineering: { label: "Engineering", color: "hsl(262 80% 50%)" },
-  Product: { label: "Product", color: "hsl(222 80% 50%)" },
-  Design: { label: "Design", color: "hsl(198 80% 50%)" },
-  Sales: { label: "Sales", color: "hsl(178 70% 40%)" },
-  Marketing: { label: "Marketing", color: "hsl(150 70% 40%)" },
-  "Human Resources": { label: "Human Resources", color: "hsl(30 80% 50%)" },
-  Finance: { label: "Finance", color: "hsl(350 80% 55%)" },
-  "Customer Support": { label: "Customer Support", color: "hsl(220 15% 65%)" },
-  Unassigned: { label: "Unassigned", color: "hsl(var(--muted))" },
+  "Engineering": { label: "Engineering", color: "hsl(220, 80%, 60%)" },
+  "Product": { label: "Product", color: "hsl(190, 80%, 55%)" },
+  "Design": { label: "Design", color: "hsl(170, 70%, 50%)" },
+  "Sales": { label: "Sales", color: "hsl(350, 80%, 65%)" },
+  "Marketing": { label: "Marketing", color: "hsl(30, 85%, 60%)" },
+  "Human Resources": { label: "Human Resources", color: "hsl(260, 75%, 65%)" },
+  "Finance": { label: "Finance", color: "hsl(120, 50%, 55%)" },
+  "Customer Support": { label: "Customer Support", color: "hsl(50, 90%, 60%)" },
+  "Unassigned": { label: "Unassigned", color: "hsl(var(--muted))" },
 } satisfies ChartConfig;
+
+const getDepartmentColor = (department: string): string => {
+  return chartConfig[department as keyof typeof chartConfig]?.color || "hsl(var(--muted))";
+};
 
 interface AdminChartsProps {
   onDepartmentSelect: (department: string | null) => void;
@@ -89,7 +93,6 @@ export function AdminCharts({ onDepartmentSelect, selectedDepartment }: AdminCha
     return Object.entries(counts).map(([department, count]) => ({
       department,
       count,
-      fill: `var(--color-${department})`
     }));
   }, [employees]);
 
@@ -149,14 +152,14 @@ export function AdminCharts({ onDepartmentSelect, selectedDepartment }: AdminCha
               }
             />
             <ChartTooltip
-              cursor={false}
+              cursor={{fill: 'hsl(var(--muted))'}}
               content={<ChartTooltipContent hideLabel />}
             />
             <Bar dataKey="count" radius={5}>
               {departmentData.map((entry) => (
                 <Cell
-                    key={entry.department}
-                    fill={entry.fill}
+                    key={`cell-${entry.department}`}
+                    fill={getDepartmentColor(entry.department)}
                     className={cn(
                         "cursor-pointer",
                         selectedDepartment && selectedDepartment !== entry.department && "opacity-50"
