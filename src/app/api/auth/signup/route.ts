@@ -28,8 +28,8 @@ export async function POST(req: Request) {
         // Get the total number of employees to generate the next ID
         const { rows: countResult } = await client.query('SELECT COUNT(*) FROM employees');
         const employeeCount = parseInt(countResult[0].count, 10);
-        // Format the new ID, e.g., df001, df002, etc.
-        const newEmployeeId = `df${(employeeCount + 1).toString().padStart(3, '0')}`;
+        // Format the new ID, e.g., DF001, DF002, etc.
+        const newEmployeeId = `DF${(employeeCount + 1).toString().padStart(3, '0')}`;
         // -----------------------------------------
 
         // Hash password
