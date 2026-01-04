@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getDaysInMonth } from 'date-fns';
-import { getRoleFromToken } from '../helpers';
+import { getRoleFromToken } from '@/app/api/helpers';
 import { z } from 'zod';
 
 const generateIndividualSchema = z.object({

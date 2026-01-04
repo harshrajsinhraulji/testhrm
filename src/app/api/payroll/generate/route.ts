@@ -4,7 +4,7 @@ import db from '@/lib/db';
 import { getDaysInMonth } from 'date-fns';
 
 // Helper to verify role from JWT - assuming you have this utility
-import { getRoleFromToken } from '../helpers';
+import { getRoleFromToken } from '@/app/api/helpers';
 import type { UserRole } from '@/lib/types';
 
 
