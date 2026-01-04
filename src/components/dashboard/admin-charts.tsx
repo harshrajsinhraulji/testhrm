@@ -25,35 +25,35 @@ const chartConfig = {
   },
   Engineering: {
     label: "Engineering",
-    color: "hsl(var(--chart-1))",
+    color: "hsl(var(--chart-1))", // Primary purple
   },
   Product: {
     label: "Product",
-    color: "hsl(var(--chart-2))",
+    color: "hsl(260, 50%, 60%)", // Different shade of purple
   },
   Design: {
     label: "Design",
-    color: "hsl(var(--chart-3))",
+    color: "hsl(230, 60%, 65%)", // A nice blue
   },
   Sales: {
     label: "Sales",
-    color: "hsl(var(--chart-4))",
+    color: "hsl(205, 55%, 55%)", // A slightly different blue
   },
   Marketing: {
     label: "Marketing",
-    color: "hsl(var(--chart-5))",
+    color: "hsl(180, 50%, 50%)", // Teal
   },
   "Human Resources": {
     label: "Human Resources",
-    color: "hsl(210, 70%, 60%)",
+    color: "hsl(160, 40%, 50%)", // Greenish-teal
   },
   Finance: {
     label: "Finance",
-    color: "hsl(200, 70%, 55%)",
+    color: "hsl(var(--chart-2))", // Theme green
   },
   "Customer Support": {
     label: "Customer Support",
-    color: "hsl(220, 15%, 65%)",
+    color: "hsl(220, 15%, 65%)", // Neutral gray/blue
   },
    Unassigned: {
     label: "Unassigned",
