@@ -18,6 +18,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import type { User } from "@/lib/types";
 import { Skeleton } from "../ui/skeleton";
+import { cn } from "@/lib/utils";
 
 const chartConfig = {
   count: {
@@ -61,8 +62,12 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+interface AdminChartsProps {
+  onDepartmentSelect: (department: string | null) => void;
+  selectedDepartment: string | null;
+}
 
-export function AdminCharts() {
+export function AdminCharts({ onDepartmentSelect, selectedDepartment }: AdminChartsProps) {
   const [employees, setEmployees] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -136,7 +141,7 @@ export function AdminCharts() {
       <CardHeader>
         <CardTitle>Headcount by Department</CardTitle>
         <CardDescription>
-          A summary of employee distribution across departments.
+          Click a department to filter the employee list below.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -150,6 +155,12 @@ export function AdminCharts() {
             layout="vertical"
             margin={{
               left: -20,
+            }}
+            onClick={(e) => {
+                if (e && e.activePayload && e.activePayload[0]) {
+                    const department = e.activePayload[0].payload.department;
+                    onDepartmentSelect(department === selectedDepartment ? null : department);
+                }
             }}
           >
             <XAxis type="number" hide />
@@ -168,7 +179,14 @@ export function AdminCharts() {
             />
             <Bar dataKey="count" radius={5}>
               {departmentData.map((entry) => (
-                <Cell key={entry.department} fill={entry.fill} />
+                <Cell 
+                    key={entry.department} 
+                    fill={entry.fill} 
+                    className={cn(
+                        "cursor-pointer",
+                        selectedDepartment && selectedDepartment !== entry.department && "opacity-50"
+                    )}
+                />
               ))}
             </Bar>
           </BarChart>

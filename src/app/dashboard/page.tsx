@@ -18,6 +18,8 @@ import { useEffect, useState, useMemo } from 'react';
 import type { User, AttendanceRecord, LeaveRequest } from '@/lib/types';
 import { FilteredEmployeeRoster } from '@/components/dashboard/filtered-employee-roster';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 
 
 const getWelcomeContent = (role: string | null, name?: string) => {
@@ -51,6 +53,7 @@ export default function DashboardPage() {
   const isAdminOrHR = role === 'Admin' || role === 'HR';
   
   const [activeFilter, setActiveFilter] = useState<EmployeeFilter>('all');
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
   const [employees, setEmployees] = useState<User[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -109,6 +112,11 @@ export default function DashboardPage() {
   const filteredEmployees = useMemo(() => {
     if (!isAdminOrHR) return [];
     
+    let departmentFiltered = employees;
+    if (selectedDepartment) {
+      departmentFiltered = employees.filter(e => e.employeeDetails?.department === selectedDepartment);
+    }
+    
     const today = new Date().toISOString().split('T')[0];
     
     const presentIds = new Set(attendance.filter(a => a.date === today && a.status === 'Present').map(a => a.employeeId));
@@ -116,19 +124,22 @@ export default function DashboardPage() {
 
     switch (activeFilter) {
       case 'all':
-        return employees;
+        return departmentFiltered;
       case 'present':
-        return employees.filter(e => presentIds.has(e.id));
+        return departmentFiltered.filter(e => presentIds.has(e.id));
       case 'onLeave':
-        return employees.filter(e => onLeaveIds.has(e.id));
+        return departmentFiltered.filter(e => onLeaveIds.has(e.id));
       case 'absent':
-        return employees.filter(e => !presentIds.has(e.id) && !onLeaveIds.has(e.id));
+        return departmentFiltered.filter(e => !presentIds.has(e.id) && !onLeaveIds.has(e.id));
       default:
-        return employees;
+        return departmentFiltered;
     }
-  }, [activeFilter, employees, attendance, leaveRequests, isAdminOrHR]);
+  }, [activeFilter, selectedDepartment, employees, attendance, leaveRequests, isAdminOrHR]);
   
   const getRosterTitleAndDescription = () => {
+    if (selectedDepartment) {
+      return { title: `Employees in ${selectedDepartment}`, description: `A list of all employees in the ${selectedDepartment} department.` };
+    }
     switch (activeFilter) {
         case 'all': return { title: 'All Employees', description: 'A complete list of all employees.' };
         case 'present': return { title: 'Employees Present Today', description: 'Employees who have checked in today.' };
@@ -137,6 +148,10 @@ export default function DashboardPage() {
         default: return { title: 'Employee Roster', description: 'An overview of all employees.' };
     }
   }
+  
+  const handleDepartmentSelect = (department: string | null) => {
+    setSelectedDepartment(department);
+  };
 
   const rosterInfo = getRosterTitleAndDescription();
 
@@ -154,14 +169,24 @@ export default function DashboardPage() {
             attendance={attendance}
             leaveRequests={leaveRequests}
           />
-          <AdminCharts />
+          <AdminCharts onDepartmentSelect={handleDepartmentSelect} selectedDepartment={selectedDepartment} />
           <div className="grid gap-6 lg:grid-cols-5">
             <Card className="lg:col-span-3">
               <CardHeader>
-                <CardTitle>{rosterInfo.title}</CardTitle>
-                <CardDescription>
-                  {rosterInfo.description}
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle>{rosterInfo.title}</CardTitle>
+                        <CardDescription>
+                          {rosterInfo.description}
+                        </CardDescription>
+                    </div>
+                    {selectedDepartment && (
+                        <Button variant="ghost" size="sm" onClick={() => handleDepartmentSelect(null)}>
+                            <X className="mr-2 h-4 w-4" />
+                            Clear Filter
+                        </Button>
+                    )}
+                </div>
               </CardHeader>
               <CardContent>
                 {loading ? (
