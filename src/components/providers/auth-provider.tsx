@@ -1,3 +1,4 @@
+
 "use client";
 
 import { AuthContext } from "@/hooks/use-auth";
@@ -53,39 +54,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
 
   const login = async (email: string, pass: string): Promise<User | null> => {
-    // Hardcoded admin login for testing
-    if (email === 'h.raulji2005@gmail.com' && pass === 'harsh123') {
-      const adminAvatar = PlaceHolderImages.find(img => img.id === 'admin-avatar');
-      const adminUser: User = {
-        id: 'c39a3f4b-2d33-41a4-9275-10a1334c6e99',
-        name: 'Harsh Raulji',
-        email: 'h.raulji2005@gmail.com',
-        role: 'Admin',
-        avatarUrl: adminAvatar?.imageUrl || 'https://placehold.co/100x100',
-        employeeDetails: {
-          id: 'c39a3f4b-2d33-41a4-9275-10a1334c6e99', // Mock UUID for admin
-          employeeId: 'DF-ADMIN',
-          department: 'Management',
-          position: 'System Administrator',
-          dateOfJoining: '2022-01-01',
-          contactNumber: '123-456-7890',
-          address: '123 Admin Way, Tech City',
-          emergencyContact: {
-            name: 'Admin Support',
-            relationship: 'Support',
-            phone: '098-765-4321',
-          },
-        }
-      };
-      
-      // Create a mock JWT for the hardcoded admin
-      const mockAdminToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjMzlhM2Y0Yi0yZDMzLTQxYTQtOTI3NS0xMGEzMzM0YzZlOTkiLCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3MjE0ODQwMDAsImV4cCI6MTc4NDU1NjAwMH0.fake-token-signature-for-admin';
-      setUser(adminUser);
-      setStoredUser(adminUser);
-      setStoredToken(mockAdminToken);
-      return adminUser;
-    }
-
     try {
         const response = await fetch('/api/auth/login', {
             method: 'POST',
