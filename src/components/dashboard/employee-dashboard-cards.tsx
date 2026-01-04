@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { AttendanceRecord } from "@/lib/types";
 import { Badge } from "../ui/badge";
 import { cn } from "@/lib/utils";
+import { ArrowRight } from "lucide-react";
 
 const getStatusClasses = (status: AttendanceRecord['status'] | undefined) => {
   if (!status) return "bg-slate-100 text-slate-800";
@@ -99,6 +100,24 @@ export function EmployeeDashboardCards() {
                 </Button>
             </div>
         </CardContent>
+        <CardFooter className="bg-muted/50 p-4 flex flex-col sm:flex-row items-center gap-2">
+            <p className="text-sm font-medium text-muted-foreground mr-auto">Quick Actions:</p>
+             <Button variant="ghost" size="sm" asChild>
+                <Link href="/dashboard/attendance">
+                    My Attendance <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+                <Link href="/dashboard/leave">
+                    My Leave <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+                <Link href="/dashboard/profile">
+                    My Profile <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+            </Button>
+        </CardFooter>
     </Card>
   );
 }
