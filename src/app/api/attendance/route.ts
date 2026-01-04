@@ -44,14 +44,30 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const client = await db.connect();
   try {
     const { employeeId, action } = await req.json();
-    const today = new Date().toISOString().split('T')[0];
     const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const currentMonth = now.toLocaleString('default', { month: 'long' });
+    const currentYear = now.getFullYear();
+
+    // --- PAYROLL LOCK-OUT CHECK ---
+    // Before allowing an attendance action, check if payroll for this month has been run.
+    const { rows: existingSlips } = await client.query(
+      `SELECT id FROM pay_slips WHERE employee_id = $1 AND month = $2 AND year = $3`,
+      [employeeId, currentMonth, currentYear]
+    );
+
+    if (existingSlips.length > 0) {
+      return NextResponse.json({ message: 'Cannot mark attendance. Payroll for this month has already been finalized.' }, { status: 403 }); // 403 Forbidden
+    }
+    // --- END CHECK ---
+
+    await client.query('BEGIN');
 
     if (action === 'checkin') {
-      // Upsert logic: Insert a new record or update the status if one exists for today
-      const { rows } = await db.query(
+      const { rows } = await client.query(
         `INSERT INTO attendance_records (employee_id, record_date, status, check_in_time)
          VALUES ($1, $2, 'Present', $3)
          ON CONFLICT (employee_id, record_date)
@@ -59,9 +75,10 @@ export async function POST(req: Request) {
          RETURNING *`,
         [employeeId, today, now]
       );
+      await client.query('COMMIT');
       return NextResponse.json(rows[0]);
     } else if (action === 'checkout') {
-      const { rows } = await db.query(
+      const { rows } = await client.query(
         `UPDATE attendance_records
          SET check_out_time = $1
          WHERE employee_id = $2 AND record_date = $3
@@ -69,16 +86,21 @@ export async function POST(req: Request) {
         [now, employeeId, today]
       );
       if (rows.length === 0) {
+        await client.query('ROLLBACK');
         return NextResponse.json({ message: 'No check-in record found for today.' }, { status: 404 });
       }
+      await client.query('COMMIT');
       return NextResponse.json(rows[0]);
     }
 
+    await client.query('ROLLBACK');
     return NextResponse.json({ message: 'Invalid action.' }, { status: 400 });
 
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('API Error updating attendance:', error);
     return NextResponse.json({ message: 'Failed to update attendance' }, { status: 500 });
+  } finally {
+    client.release();
   }
 }
-
