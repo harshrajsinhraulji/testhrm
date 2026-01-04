@@ -1,4 +1,3 @@
-
 import type { User, Employee, AttendanceRecord, LeaveRequest, PaySlip, SalaryStructure } from './types';
 
 // Mock data is cleared. The application will now rely on database calls.
