@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { AuthProvider } from '@/components/providers/auth-provider';
+import { ClientAuthProvider } from '@/components/providers/client-auth-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { Inter, Poppins } from 'next/font/google';
 import { cn } from '@/lib/utils';
@@ -33,10 +33,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="light" style={{ colorScheme: 'light' }}>
       <body className={cn('font-body antialiased', fontInter.variable, fontPoppins.variable)}>
-        <AuthProvider>
+        <ClientAuthProvider>
           {children}
           <Toaster />
-        </AuthProvider>
+        </ClientAuthProvider>
       </body>
     </html>
   );
