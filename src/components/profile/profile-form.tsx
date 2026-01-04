@@ -243,7 +243,7 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
                                 <FormLabel>Department</FormLabel>
                                 <Select onValueChange={(value) => {
                                   field.onChange(value);
-                                  form.resetField("position");
+                                  form.setValue("position", "");
                                 }} 
                                 value={field.value} 
                                 disabled={!canEditEmploymentInfo}
