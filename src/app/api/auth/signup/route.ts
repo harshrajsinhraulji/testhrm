@@ -6,35 +6,43 @@ import { getPredefinedSalary } from '@/lib/salary-config';
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password, employeeId, department, position } = await req.json();
+    const { name, email, password, department, position } = await req.json();
 
-    // Basic validation
-    if (!name || !email || !password || !employeeId || !department || !position) {
+    // Basic validation - employeeId is no longer needed from client
+    if (!name || !email || !password || !department || !position) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
     }
     
-    // Check if user already exists
-    const { rows: existingUsers } = await db.query('SELECT * FROM employees WHERE email = $1 OR employee_id = $2', [email, employeeId]);
-    if (existingUsers.length > 0) {
-      return NextResponse.json({ message: 'User with this email or employee ID already exists' }, { status: 409 });
-    }
-    
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
-    
-    // New users are always 'Employee'
-    const role = 'Employee';
-
-    // Begin a transaction
     const client = await db.connect();
     try {
         await client.query('BEGIN');
 
-        // Insert new user with department and position
+        // Check if user already exists by email
+        const { rows: existingUsers } = await client.query('SELECT * FROM employees WHERE email = $1', [email]);
+        if (existingUsers.length > 0) {
+          await client.query('ROLLBACK');
+          return NextResponse.json({ message: 'User with this email already exists' }, { status: 409 });
+        }
+
+        // --- AUTOMATIC EMPLOYEE ID GENERATION ---
+        // Get the total number of employees to generate the next ID
+        const { rows: countResult } = await client.query('SELECT COUNT(*) FROM employees');
+        const employeeCount = parseInt(countResult[0].count, 10);
+        // Format the new ID, e.g., DF-001, DF-002, etc.
+        const newEmployeeId = `DF-${(employeeCount + 1).toString().padStart(3, '0')}`;
+        // -----------------------------------------
+
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(password, salt);
+        
+        // New users are always 'Employee'
+        const role = 'Employee';
+
+        // Insert new user with the generated employee_id
         const { rows: newUsers } = await client.query(
           'INSERT INTO employees (name, email, password_hash, employee_id, role, department, position) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, name, email, role, employee_id, avatar_url, position, department',
-          [name, email, passwordHash, employeeId, role, department, position]
+          [name, email, passwordHash, newEmployeeId, role, department, position]
         );
 
         const newUser = newUsers[0];
