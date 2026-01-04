@@ -152,48 +152,43 @@ export default function DashboardPage() {
       <PageHeader title={title} description={description} />
 
       {isAdminOrHR ? (
-        <>
-          <StatsCards 
-            activeFilter={activeFilter} 
-            onFilterChange={setActiveFilter}
-            employees={employees}
-            attendance={attendance}
-            leaveRequests={leaveRequests}
-          />
-
-          <DailyStatusList 
-            employees={employees}
-            attendance={attendance}
-            leaveRequests={leaveRequests}
-          />
-
-          <div className="grid gap-6 lg:grid-cols-5">
-              <div className="lg:col-span-3">
-                  <AdminCharts onDepartmentSelect={handleDepartmentSelect} selectedDepartment={selectedDepartment} />
-              </div>
-              <div className="lg:col-span-2">
-                   <Card className="h-full">
-                      <CardHeader>
-                        <CardTitle>Recent Leave Requests</CardTitle>
-                        <CardDescription>
-                          A summary of the most recent leave requests.
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <RecentLeaveRequests employees={employees} />
-                      </CardContent>
-                    </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+             <StatsCards 
+                activeFilter={activeFilter} 
+                onFilterChange={setActiveFilter}
+                employees={employees}
+                attendance={attendance}
+                leaveRequests={leaveRequests}
+              />
+               <DailyStatusList 
+                employees={employees}
+                attendance={attendance}
+                leaveRequests={leaveRequests}
+              />
+              <div ref={rosterRef}>
+                <FilteredEmployeeRoster 
+                    department={selectedDepartment}
+                    statusFilter={activeFilter}
+                    onClearDepartment={() => setSelectedDepartment(null)}
+                />
               </div>
           </div>
-          
-          <div ref={rosterRef}>
-            <FilteredEmployeeRoster 
-                department={selectedDepartment}
-                statusFilter={activeFilter}
-                onClearDepartment={() => setSelectedDepartment(null)}
-            />
+          <div className="lg:col-span-1 space-y-6">
+             <AdminCharts onDepartmentSelect={handleDepartmentSelect} selectedDepartment={selectedDepartment} />
+             <Card className="h-full">
+                <CardHeader>
+                  <CardTitle>Recent Leave Requests</CardTitle>
+                  <CardDescription>
+                    A summary of the most recent leave requests.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RecentLeaveRequests employees={employees} />
+                </CardContent>
+              </Card>
           </div>
-        </>
+        </div>
       ) : (
         <div className="space-y-6">
           <EmployeeDashboardCards />

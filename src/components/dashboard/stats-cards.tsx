@@ -28,36 +28,42 @@ export function StatsCards({ employees, attendance, leaveRequests, activeFilter,
     const [loading, setLoading] = useState(true);
 
     const stats: DashboardStats | null = useMemo(() => {
+        if (!employees.length && !loading) return { totalEmployees: 0, presentToday: 0, onLeaveToday: 0, absentToday: 0 };
         if (!employees.length) return null;
         
         const today = new Date().toISOString().split('T')[0];
         const totalEmployees = employees.length;
         
-        const onLeaveToday = leaveRequests.filter(req => 
+        const onLeaveIds = new Set(leaveRequests.filter(req => 
             req.status === 'Approved' && 
             new Date(req.startDate) <= new Date(today) && 
             new Date(req.endDate) >= new Date(today)
-        ).length;
+        ).map(req => req.employeeId));
         
-        const presentToday = attendance.filter(att => 
+        const presentIds = new Set(attendance.filter(att => 
             att.date === today && att.status === "Present"
-        ).length;
+        ).map(att => att.employeeId));
         
-        const absentToday = totalEmployees - presentToday - onLeaveToday;
+        const presentToday = presentIds.size;
+        const onLeaveToday = onLeaveIds.size;
+
+        // An employee is absent if they are not present and not on leave.
+        const absentToday = employees.filter(e => !presentIds.has(e.id) && !onLeaveIds.has(e.id)).length;
+
 
         return {
             totalEmployees,
             presentToday,
             onLeaveToday,
-            absentToday: absentToday > 0 ? absentToday : 0
+            absentToday
         };
-    }, [employees, attendance, leaveRequests]);
+    }, [employees, attendance, leaveRequests, loading]);
     
     useEffect(() => {
-        if (employees.length > 0) {
+        if (employees.length > 0 || !loading) {
             setLoading(false);
         }
-    }, [employees]);
+    }, [employees, loading]);
 
 
     if (loading) {
@@ -67,6 +73,7 @@ export function StatsCards({ employees, attendance, leaveRequests, activeFilter,
                     <Card key={i}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                            <Skeleton className="h-5 w-24" />
+                           <Skeleton className="h-4 w-4" />
                         </CardHeader>
                         <CardContent>
                             <Skeleton className="h-8 w-12" />
@@ -85,7 +92,7 @@ export function StatsCards({ employees, attendance, leaveRequests, activeFilter,
     ];
     
     return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {statsCards.map((stat) => (
                 <Card 
                     key={stat.title}

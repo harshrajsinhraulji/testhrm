@@ -14,6 +14,8 @@ interface DailyStatusListProps {
 
 export function DailyStatusList({ employees, attendance, leaveRequests }: DailyStatusListProps) {
   const dailyStatus = useMemo(() => {
+    if (!employees.length) return { present: [], onLeave: [], absent: [] };
+    
     const today = new Date().toISOString().split('T')[0];
 
     const presentIds = new Set(attendance.filter(a => a.date === today && a.status === 'Present').map(a => a.employeeId));
@@ -33,7 +35,7 @@ export function DailyStatusList({ employees, attendance, leaveRequests }: DailyS
         <div className="flex flex-wrap items-center justify-center gap-2">
             <TooltipProvider>
                 {users.map(user => (
-                    <Tooltip key={user.id}>
+                    <Tooltip key={user.id} delayDuration={100}>
                         <TooltipTrigger>
                             <Avatar className="h-9 w-9 border-2" style={{ borderColor: `hsl(var(${colorClass}))`}}>
                                 <AvatarImage src={user.avatarUrl} alt={user.name} className="object-cover" />
