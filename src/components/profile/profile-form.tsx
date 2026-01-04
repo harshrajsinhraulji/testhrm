@@ -28,6 +28,16 @@ import { useToast } from "@/hooks/use-toast";
 import { Separator } from "../ui/separator";
 import type { User } from "@/lib/types";
 import { departments, positionsByDepartment } from "@/lib/departments-config";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name is too short"),
@@ -37,13 +47,14 @@ const profileSchema = z.object({
   emergencyContactName: z.string().min(2, "Name is too short").or(z.literal("")),
   emergencyContactRelationship: z.string().min(2, "Relationship is too short").or(z.literal("")),
   emergencyContactPhone: z.string().min(10, "Invalid phone number").or(z.literal("")),
-  // Admin/HR only fields
   department: z.string().optional(),
   position: z.string().optional(),
 });
 
+type ProfileFormValues = z.infer<typeof profileSchema>;
+
 interface ProfileFormProps {
-    employee?: User | null; // Make employee optional
+    employee?: User | null; 
     onFormSubmit?: () => void;
 }
 
@@ -51,29 +62,22 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
   const { user: loggedInUser, role, refreshUser } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [formData, setFormData] = useState<ProfileFormValues | null>(null);
   
-  // Determine which user object to use: the one passed as a prop, or the logged-in user.
   const userToEdit = employee || loggedInUser;
   const isSelf = loggedInUser?.id === userToEdit?.id;
 
-  // Define role-based permissions
   const canEditPersonalInfo = role === 'Admin' || isSelf;
   const canEditEmploymentInfo = role === 'Admin' || role === 'HR';
   const isFullNameDisabled = (role === 'HR' && !isSelf) || (role !== 'Admin' && !isSelf);
 
-
-  const form = useForm<z.infer<typeof profileSchema>>({
+  const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: "",
-      email: "",
-      contactNumber: "",
-      address: "",
-      emergencyContactName: "",
-      emergencyContactRelationship: "",
-      emergencyContactPhone: "",
-      department: "",
-      position: "",
+      name: "", email: "", contactNumber: "", address: "",
+      emergencyContactName: "", emergencyContactRelationship: "", emergencyContactPhone: "",
+      department: "", position: "",
     },
   });
   
@@ -95,44 +99,38 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
     }
   }, [userToEdit, form]);
 
-  async function onSubmit(values: z.infer<typeof profileSchema>) {
+  function onSubmit(values: ProfileFormValues) {
+    const originalDepartment = userToEdit?.employeeDetails?.department;
+    const originalPosition = userToEdit?.employeeDetails?.position;
+
+    if (canEditEmploymentInfo && (values.department !== originalDepartment || values.position !== originalPosition)) {
+      setFormData(values);
+      setIsConfirmOpen(true);
+    } else {
+      handleConfirmSubmit(values);
+    }
+  }
+
+  async function handleConfirmSubmit(values: ProfileFormValues) {
+    setIsConfirmOpen(false);
     setLoading(true);
     if (!userToEdit?.employeeDetails?.id) {
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not find user to update.",
-        });
+        toast({ variant: "destructive", title: "Error", description: "Could not find user to update." });
         setLoading(false);
         return;
     }
     
-    // Construct payload based on permissions
-    let updatePayload: Partial<z.infer<typeof profileSchema>> = {};
+    let updatePayload: Partial<ProfileFormValues> = {};
 
     if (canEditPersonalInfo) {
-      updatePayload = {
-        ...updatePayload,
-        name: values.name,
-        contactNumber: values.contactNumber,
-        address: values.address,
-        emergencyContactName: values.emergencyContactName,
-        emergencyContactRelationship: values.emergencyContactRelationship,
-        emergencyContactPhone: values.emergencyContactPhone,
-      };
+      updatePayload = { ...updatePayload, name: values.name, contactNumber: values.contactNumber, address: values.address, emergencyContactName: values.emergencyContactName, emergencyContactRelationship: values.emergencyContactRelationship, emergencyContactPhone: values.emergencyContactPhone };
     }
 
     if (canEditEmploymentInfo) {
-      updatePayload = {
-        ...updatePayload,
-        department: values.department,
-        position: values.position
-      };
+      updatePayload = { ...updatePayload, department: values.department, position: values.position };
     }
     
-    // Email should not be part of the update payload from this form
     delete updatePayload.email;
-
 
     try {
         const res = await fetch(`/api/employees/${userToEdit.employeeDetails.id}`, {
@@ -141,35 +139,22 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
             body: JSON.stringify(updatePayload),
         });
 
-        if (!res.ok) {
-            throw new Error("Failed to update profile.");
-        }
+        if (!res.ok) throw new Error("Failed to update profile.");
         
-        // If an onFormSubmit callback is provided (for editing others), use it.
-        // Otherwise, use the default refreshUser for the logged-in user.
-        if (onFormSubmit) {
-            onFormSubmit();
-        } else {
-            await refreshUser();
-        }
+        if (onFormSubmit) onFormSubmit();
+        else await refreshUser();
 
-        toast({
-            title: "Profile Updated",
-            description: "Your information has been saved successfully.",
-        });
+        toast({ title: "Profile Updated", description: "Your information has been saved successfully." });
 
     } catch (error: any) {
-        toast({
-            variant: "destructive",
-            title: "Update Failed",
-            description: error.message || "An unexpected error occurred.",
-        });
+        toast({ variant: "destructive", title: "Update Failed", description: error.message || "An unexpected error occurred." });
     } finally {
         setLoading(false);
     }
   }
 
   return (
+    <>
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <div>
@@ -265,7 +250,7 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
                               >
                                 <FormControl>
                                     <SelectTrigger>
-                                    <SelectValue placeholder="Select a department" />
+                                        <SelectValue placeholder="Select a department" />
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
@@ -291,7 +276,7 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
                                 >
                                 <FormControl>
                                     <SelectTrigger>
-                                    <SelectValue placeholder={!selectedDepartment ? "Select department first" : "Select a position"} />
+                                        <SelectValue placeholder={!selectedDepartment ? "Select department first" : "Select a position"} />
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
@@ -317,5 +302,24 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
         </div>
       </form>
     </Form>
+
+    <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Employment Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to change this employee's role. This will automatically update their salary structure based on the new position. Are you sure you want to proceed?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleConfirmSubmit(formData!)} disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirm & Update Salary
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
