@@ -29,6 +29,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
+import { subDays, format } from "date-fns";
 
 const getStatusClasses = (status: AttendanceRecord['status']) => {
   switch (status) {
@@ -44,6 +46,51 @@ const getStatusClasses = (status: AttendanceRecord['status']) => {
       return "bg-slate-100 text-slate-800";
   }
 };
+
+const WeeklyHoursChart = ({ data }: { data: AttendanceRecord[] }) => {
+  const chartData = useMemo(() => {
+    const sevenDaysAgo = subDays(new Date(), 6);
+    return Array.from({ length: 7 }).map((_, i) => {
+      const date = subDays(new Date(), i);
+      const dateString = date.toISOString().split('T')[0];
+      const record = data.find(r => r.date === dateString);
+      
+      let hours = 0;
+      if (record?.totalHours) {
+        const parts = record.totalHours.match(/(\d+)h (\d+)m/);
+        if (parts) {
+          hours = parseInt(parts[1]) + parseInt(parts[2]) / 60;
+        }
+      }
+      
+      return {
+        name: format(date, 'EEE'),
+        hours: parseFloat(hours.toFixed(2)),
+      };
+    }).reverse();
+  }, [data]);
+
+  return (
+    <ResponsiveContainer width="100%" height={200}>
+      <BarChart data={chartData} margin={{ top: 20, right: 20, bottom: 0, left: -20 }}>
+        <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+        <Tooltip
+            cursor={{fill: 'hsl(var(--muted))'}}
+            content={({ active, payload }) =>
+                active && payload && payload.length ? (
+                <Card className="p-2 shadow-lg">
+                    <p className="font-bold">{`${payload[0].payload.hours.toFixed(2)} hours`}</p>
+                </Card>
+                ) : null
+            }
+        />
+        <Bar dataKey="hours" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+};
+
 
 export default function AttendancePage() {
   const { user, role } = useAuth();
@@ -139,6 +186,12 @@ export default function AttendancePage() {
   
   const dailyRecords = allAttendanceRecords.filter(r => r.date === today);
 
+  const TABS_CONFIG = {
+    daily: { value: "daily", label: "Daily View" },
+    streak: { value: "streak", label: "Yearly Streak" },
+    weekly: { value: "weekly", label: "Weekly Hours" },
+  };
+
   return (
     <div>
       <PageHeader
@@ -161,12 +214,14 @@ export default function AttendancePage() {
           <Skeleton className="h-64 w-full" />
         </div>
       ) : (
-        <Tabs defaultValue="daily">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="daily">Daily View</TabsTrigger>
-            <TabsTrigger value="weekly">Yearly Streak</TabsTrigger>
+        <Tabs defaultValue={TABS_CONFIG.daily.value}>
+          <TabsList className={`grid w-full max-w-lg ${isAdminOrHR ? 'grid-cols-2' : 'grid-cols-3'}`}>
+            <TabsTrigger value={TABS_CONFIG.daily.value}>{TABS_CONFIG.daily.label}</TabsTrigger>
+            <TabsTrigger value={TABS_CONFIG.streak.value}>{TABS_CONFIG.streak.label}</TabsTrigger>
+            {!isAdminOrHR && <TabsTrigger value={TABS_CONFIG.weekly.value}>{TABS_CONFIG.weekly.label}</TabsTrigger>}
           </TabsList>
-          <TabsContent value="daily">
+
+          <TabsContent value={TABS_CONFIG.daily.value}>
             <Card>
               <CardHeader>
                 <CardTitle>Today's Attendance</CardTitle>
@@ -187,6 +242,7 @@ export default function AttendancePage() {
                         {isAdminOrHR && <TableHead>Status</TableHead>}
                         <TableHead>Check In</TableHead>
                         <TableHead>Check Out</TableHead>
+                        <TableHead>Total Hours</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -201,10 +257,11 @@ export default function AttendancePage() {
                               </TableCell>
                               <TableCell>{record.checkIn || "N/A"}</TableCell>
                               <TableCell>{record.checkOut || "N/A"}</TableCell>
+                              <TableCell>{record.totalHours || "N/A"}</TableCell>
                             </TableRow>
                          )) : (
                            <TableRow>
-                                <TableCell colSpan={4} className="h-24 text-center">No records for today.</TableCell>
+                                <TableCell colSpan={5} className="h-24 text-center">No records for today.</TableCell>
                            </TableRow>
                          )
                       ) : (
@@ -217,10 +274,11 @@ export default function AttendancePage() {
                                 </TableCell>
                                 <TableCell>{record.checkIn || "N/A"}</TableCell>
                                 <TableCell>{record.checkOut || "N/A"}</TableCell>
+                                <TableCell>{record.totalHours || "N/A"}</TableCell>
                             </TableRow>
                          )) : (
                             <TableRow>
-                                <TableCell colSpan={3} className="h-24 text-center">Your attendance is not marked for today.</TableCell>
+                                <TableCell colSpan={4} className="h-24 text-center">Your attendance is not marked for today.</TableCell>
                             </TableRow>
                          )
                       )}
@@ -230,7 +288,7 @@ export default function AttendancePage() {
               </CardContent>
             </Card>
           </TabsContent>
-          <TabsContent value="weekly">
+          <TabsContent value={TABS_CONFIG.streak.value}>
           <Card>
               <CardHeader>
                 <CardTitle>Yearly Attendance Streak</CardTitle>
@@ -261,6 +319,19 @@ export default function AttendancePage() {
               </CardContent>
             </Card>
           </TabsContent>
+           {!isAdminOrHR && (
+             <TabsContent value={TABS_CONFIG.weekly.value}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Weekly Hours</CardTitle>
+                    <CardDescription>Your working hours for the last 7 days.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <WeeklyHoursChart data={selectedEmployeeRecords} />
+                  </CardContent>
+                </Card>
+             </TabsContent>
+           )}
         </Tabs>
       )}
     </div>

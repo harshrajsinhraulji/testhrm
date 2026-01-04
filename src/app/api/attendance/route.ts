@@ -2,10 +2,20 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { z } from 'zod';
+import { differenceInMinutes } from 'date-fns';
 
 const attendanceSchema = z.object({
   employeeId: z.string().uuid(),
 });
+
+// Helper to format minutes into "Xh Ym"
+const formatMinutes = (minutes: number) => {
+    if (minutes < 0) return null;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+};
+
 
 export async function GET(req: Request) {
   try {
@@ -19,21 +29,29 @@ export async function GET(req: Request) {
       query += ' WHERE employee_id = $1 ORDER BY record_date DESC';
       params.push(employeeId);
     } else {
-      // This part could be enhanced for admin roles, e.g., fetching all for a certain date
       query += ' ORDER BY record_date DESC, employee_id';
     }
 
     const { rows } = await db.query(query, params);
     
-    // Map database snake_case to camelCase
-    const attendanceRecords = rows.map(row => ({
-        id: row.id,
-        employeeId: row.employee_id,
-        date: new Date(row.record_date).toISOString().split('T')[0],
-        status: row.status,
-        checkIn: row.check_in_time ? new Date(row.check_in_time).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }) : null,
-        checkOut: row.check_out_time ? new Date(row.check_out_time).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }) : null,
-    }));
+    // Map database snake_case to camelCase and calculate total hours
+    const attendanceRecords = rows.map(row => {
+        let totalHours = null;
+        if (row.check_in_time && row.check_out_time) {
+            const minutes = differenceInMinutes(new Date(row.check_out_time), new Date(row.check_in_time));
+            totalHours = formatMinutes(minutes);
+        }
+
+        return {
+            id: row.id,
+            employeeId: row.employee_id,
+            date: new Date(row.record_date).toISOString().split('T')[0],
+            status: row.status,
+            checkIn: row.check_in_time ? new Date(row.check_in_time).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }) : null,
+            checkOut: row.check_out_time ? new Date(row.check_out_time).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }) : null,
+            totalHours, // Add the calculated total hours
+        }
+    });
 
 
     return NextResponse.json(attendanceRecords);
@@ -53,7 +71,6 @@ export async function POST(req: Request) {
     const currentYear = now.getFullYear();
 
     // --- PAYROLL LOCK-OUT CHECK ---
-    // Before allowing an attendance action, check if payroll for this month has been run.
     const { rows: existingSlips } = await client.query(
       `SELECT id FROM pay_slips WHERE employee_id = $1 AND month = $2 AND year = $3`,
       [employeeId, currentMonth, currentYear]

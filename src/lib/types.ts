@@ -35,6 +35,7 @@ export interface AttendanceRecord {
   status: AttendanceStatus;
   checkIn?: string;
   checkOut?: string;
+  totalHours?: string | null;
 }
 
 export type LeaveType = "Paid" | "Sick" | "Unpaid" | "Maternity";
