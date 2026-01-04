@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
 import type { PaySlip, SalaryStructure } from "@/lib/types";
-import { MoreHorizontal, Pencil, FileText, Users, ReceiptIndianRupee, AreaChart, CircleDot } from "lucide-react";
+import { MoreHorizontal, Pencil, FileText, Users, ReceiptIndianRupee, AreaChart, CircleDot, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,6 +55,7 @@ interface IndividualGenerationState {
   employee: SalaryStructure | null;
   month: string;
   year: number;
+  isLoading: boolean;
 }
 
 export default function PayrollPage() {
@@ -65,6 +66,7 @@ export default function PayrollPage() {
   const [stats, setStats] = useState<PayrollStats | null>(null);
   const [departmentBreakdown, setDepartmentBreakdown] = useState<DepartmentBreakdown[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isBulkLoading, setIsBulkLoading] = useState(false);
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
   const [selectedStructure, setSelectedStructure] = useState<SalaryStructure | null>(null);
 
@@ -73,6 +75,7 @@ export default function PayrollPage() {
     employee: null,
     month: new Date().toLocaleString('default', { month: 'long' }),
     year: new Date().getFullYear(),
+    isLoading: false,
   });
 
   const fetchPayrollData = async () => {
@@ -123,6 +126,7 @@ export default function PayrollPage() {
   }
   
   const handleBulkGenerateSlips = async () => {
+    setIsBulkLoading(true);
     try {
       const token = getToken();
       const res = await fetch('/api/payroll/generate', { 
@@ -141,6 +145,8 @@ export default function PayrollPage() {
         title: "Error",
         description: error.message,
       });
+    } finally {
+      setIsBulkLoading(false);
     }
   }
 
@@ -154,6 +160,7 @@ export default function PayrollPage() {
 
   const handleIndividualGenerateConfirm = async () => {
     if (!individualGenerateState.employee) return;
+    setIndividualGenerateState(prev => ({...prev, isLoading: true}));
     try {
       const token = getToken();
       const res = await fetch('/api/payroll/generate-individual', {
@@ -183,7 +190,7 @@ export default function PayrollPage() {
         description: error.message,
       });
     } finally {
-      setIndividualGenerateState({ ...individualGenerateState, isOpen: false, employee: null });
+      setIndividualGenerateState({ ...individualGenerateState, isOpen: false, employee: null, isLoading: false });
     }
   }
 
@@ -222,8 +229,8 @@ export default function PayrollPage() {
         {isAdminOrHR && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button>
-                <FileText className="mr-2 h-4 w-4" />
+              <Button disabled={isBulkLoading}>
+                {isBulkLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
                 Generate Slips for Month
               </Button>
             </AlertDialogTrigger>
@@ -418,7 +425,10 @@ export default function PayrollPage() {
                     </div>
                     <DialogFooter>
                       <Button variant="outline" onClick={() => setIndividualGenerateState({...individualGenerateState, isOpen: false})}>Cancel</Button>
-                      <Button onClick={handleIndividualGenerateConfirm}>Generate and Save</Button>
+                      <Button onClick={handleIndividualGenerateConfirm} disabled={individualGenerateState.isLoading}>
+                        {individualGenerateState.isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Generate and Save
+                      </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -464,5 +474,3 @@ export default function PayrollPage() {
     </div>
   );
 }
-
-    
