@@ -19,32 +19,32 @@ const employeeUpdateSchema = z.object({
 
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  try {
-    const { id } = params; // Employee UUID from the URL
-    const body = await req.json();
-
-    const validation = employeeUpdateSchema.safeParse(body);
-    if (!validation.success) {
-      return NextResponse.json({ message: 'Invalid input', errors: validation.error.issues }, { status: 400 });
-    }
-
-    const { 
-        contactNumber, address, emergencyContactName, 
-        emergencyContactRelationship, emergencyContactPhone, 
-        name, avatarUrl, department, position
-    } = validation.data;
-    
     const client = await db.connect();
     try {
+        const { id } = params; // Employee UUID from the URL
+        const body = await req.json();
+
+        const validation = employeeUpdateSchema.safeParse(body);
+        if (!validation.success) {
+            return NextResponse.json({ message: 'Invalid input', errors: validation.error.issues }, { status: 400 });
+        }
+
+        const {
+            contactNumber, address, emergencyContactName,
+            emergencyContactRelationship, emergencyContactPhone,
+            name, avatarUrl, department, position
+        } = validation.data;
+
         await client.query('BEGIN');
 
         // Fetch current employee data to check for role change
         const { rows: existingEmployeeRows } = await client.query('SELECT department, position FROM employees WHERE id = $1', [id]);
         if (existingEmployeeRows.length === 0) {
+            await client.query('ROLLBACK');
             return NextResponse.json({ message: 'Employee not found' }, { status: 404 });
         }
         const existingEmployee = existingEmployeeRows[0];
-        
+
         // Dynamically build the update query based on the fields provided
         const fieldsToUpdate = [];
         const values = [];
@@ -61,7 +61,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         if (position) { fieldsToUpdate.push(`position = $${queryIndex++}`); values.push(position); }
 
         if (fieldsToUpdate.length === 0) {
-          return NextResponse.json({ message: 'No fields to update' }, { status: 400 });
+            await client.query('ROLLBACK');
+            return NextResponse.json({ message: 'No fields to update' }, { status: 400 });
         }
 
         const query = `
@@ -79,7 +80,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         const newPosition = position || existingEmployee.position;
         if (newDepartment !== existingEmployee.department || newPosition !== existingEmployee.position) {
             const predefinedSalary = getPredefinedSalary(newDepartment, newPosition);
-            
+
             await client.query(`
                 INSERT INTO salary_structures (employee_id, basic_salary, hra, other_allowances, pf)
                 VALUES ($1, $2, $3, $4, $5)
@@ -93,7 +94,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         }
 
         await client.query('COMMIT');
-        
+
         const updatedDbUser = rows[0];
         const user = {
             id: updatedDbUser.id,
@@ -120,11 +121,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         return NextResponse.json(user);
 
     } catch (error) {
-        await (await db.connect()).query('ROLLBACK');
+        await client.query('ROLLBACK');
         console.error('API Error updating employee:', error);
         return NextResponse.json({ message: 'Failed to update employee' }, { status: 500 });
     } finally {
-        (await db.connect()).release();
+        client.release();
     }
 }
 
