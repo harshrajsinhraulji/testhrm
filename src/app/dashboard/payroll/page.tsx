@@ -90,7 +90,7 @@ export default function PayrollPage() {
     if (user) {
       fetchPayrollData();
     }
-  }, [user]);
+  }, [user, role]);
 
   const handleEditClick = (structure: SalaryStructure) => {
     setSelectedStructure(structure);
