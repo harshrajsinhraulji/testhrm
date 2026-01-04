@@ -37,7 +37,7 @@ const profileSchema = z.object({
   emergencyContactName: z.string().min(2, "Name is too short").or(z.literal("")),
   emergencyContactRelationship: z.string().min(2, "Relationship is too short").or(z.literal("")),
   emergencyContactPhone: z.string().min(10, "Invalid phone number").or(z.literal("")),
-  // Admin only fields
+  // Admin/HR only fields
   department: z.string().optional(),
   position: z.string().optional(),
 });
@@ -51,10 +51,16 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
   const { user: loggedInUser, role, refreshUser } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const isAdmin = role === 'Admin' || role === 'HR';
-
+  
   // Determine which user object to use: the one passed as a prop, or the logged-in user.
   const userToEdit = employee || loggedInUser;
+  const isSelf = loggedInUser?.id === userToEdit?.id;
+
+  // Define role-based permissions
+  const canEditPersonalInfo = role === 'Admin' || isSelf;
+  const canEditEmploymentInfo = role === 'Admin' || role === 'HR';
+  const isFullNameDisabled = (role === 'HR' && !isSelf) || (role !== 'Admin' && !isSelf);
+
 
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -70,6 +76,8 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
       position: "",
     },
   });
+  
+  const selectedDepartment = form.watch("department");
 
   useEffect(() => {
     if (userToEdit) {
@@ -99,8 +107,32 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
         return;
     }
     
-    // Omit fields that are not meant to be updated by this form
-    const { email, department, position, ...updatePayload } = values;
+    // Construct payload based on permissions
+    let updatePayload: Partial<z.infer<typeof profileSchema>> = {};
+
+    if (canEditPersonalInfo) {
+      updatePayload = {
+        ...updatePayload,
+        name: values.name,
+        contactNumber: values.contactNumber,
+        address: values.address,
+        emergencyContactName: values.emergencyContactName,
+        emergencyContactRelationship: values.emergencyContactRelationship,
+        emergencyContactPhone: values.emergencyContactPhone,
+      };
+    }
+
+    if (canEditEmploymentInfo) {
+      updatePayload = {
+        ...updatePayload,
+        department: values.department,
+        position: values.position
+      };
+    }
+    
+    // Email should not be part of the update payload from this form
+    delete updatePayload.email;
+
 
     try {
         const res = await fetch(`/api/employees/${userToEdit.employeeDetails.id}`, {
@@ -147,7 +179,7 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
               <FormField control={form.control} name="name" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
-                    <FormControl><Input {...field} disabled={!isAdmin} /></FormControl>
+                    <FormControl><Input {...field} disabled={isFullNameDisabled} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -164,7 +196,7 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
             <FormField control={form.control} name="contactNumber" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Contact Number</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
+                  <FormControl><Input {...field} disabled={!canEditPersonalInfo} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -172,7 +204,7 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
             <FormField control={form.control} name="address" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Address</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
+                  <FormControl><Input {...field} disabled={!canEditPersonalInfo} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -188,7 +220,7 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
             <FormField control={form.control} name="emergencyContactName" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Full Name</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
+                  <FormControl><Input {...field} disabled={!canEditPersonalInfo} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -196,7 +228,7 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
             <FormField control={form.control} name="emergencyContactRelationship" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Relationship</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
+                  <FormControl><Input {...field} disabled={!canEditPersonalInfo} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -204,7 +236,7 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
             <FormField control={form.control} name="emergencyContactPhone" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Phone Number</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
+                  <FormControl><Input {...field} disabled={!canEditPersonalInfo} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -212,7 +244,7 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
           </div>
         </div>
 
-        {isAdmin && (
+        {(role === 'Admin' || role === 'HR') && (
             <>
                 <Separator />
                 <div>
@@ -224,7 +256,13 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
                             render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Department</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled>
+                                <Select onValueChange={(value) => {
+                                  field.onChange(value);
+                                  form.resetField("position");
+                                }} 
+                                value={field.value} 
+                                disabled={!canEditEmploymentInfo}
+                              >
                                 <FormControl>
                                     <SelectTrigger>
                                     <SelectValue placeholder="Select a department" />
@@ -246,14 +284,18 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
                             render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Position</FormLabel>
-                                 <Select onValueChange={field.onChange} defaultValue={field.value} disabled>
+                                 <Select 
+                                  onValueChange={field.onChange} 
+                                  value={field.value} 
+                                  disabled={!canEditEmploymentInfo || !selectedDepartment}
+                                >
                                 <FormControl>
                                     <SelectTrigger>
-                                    <SelectValue placeholder="Select a position" />
+                                    <SelectValue placeholder={!selectedDepartment ? "Select department first" : "Select a position"} />
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {userToEdit?.employeeDetails?.department && positionsByDepartment[userToEdit.employeeDetails.department]?.map(pos => (
+                                    {selectedDepartment && positionsByDepartment[selectedDepartment]?.map(pos => (
                                         <SelectItem key={pos} value={pos}>{pos}</SelectItem>
                                     ))}
                                 </SelectContent>

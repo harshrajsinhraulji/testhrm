@@ -171,7 +171,7 @@ export default function EmployeeProfilePage() {
                   size="icon" 
                   className="absolute bottom-0 right-0 rounded-full h-8 w-8"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
+                  disabled={isUploading || role === 'HR'}
                 >
                     {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                     <span className="sr-only">Change picture</span>
