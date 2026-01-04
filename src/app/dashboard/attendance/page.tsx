@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -100,8 +100,15 @@ export default function AttendancePage() {
     fetchAttendanceAndEmployees();
   }, [fetchAttendanceAndEmployees]);
 
-  const personalAttendanceRecords = allAttendanceRecords.filter(a => a.employeeId === user?.id);
-  const todayUserRecord = personalAttendanceRecords.find(a => a.date === today);
+  const selectedEmployeeRecords = useMemo(() => {
+    if (!selectedEmployeeId) return [];
+    return allAttendanceRecords.filter(a => a.employeeId === selectedEmployeeId);
+  }, [allAttendanceRecords, selectedEmployeeId]);
+  
+  const todayUserRecord = useMemo(() => {
+    return allAttendanceRecords.find(a => a.employeeId === user?.id && a.date === today);
+  }, [allAttendanceRecords, user, today]);
+
   const isCheckedIn = !!(todayUserRecord && todayUserRecord.checkIn && !todayUserRecord.checkOut);
 
   const handleAttendanceAction = async (action: 'checkin' | 'checkout') => {
@@ -201,7 +208,7 @@ export default function AttendancePage() {
                            </TableRow>
                          )
                       ) : (
-                         personalAttendanceRecords.filter(r => r.date === today).length > 0 ? personalAttendanceRecords.filter(r => r.date === today).map((record) => (
+                         selectedEmployeeRecords.filter(r => r.date === today).length > 0 ? selectedEmployeeRecords.filter(r => r.date === today).map((record) => (
                              <TableRow key={record.id}>
                                 <TableCell>
                                     <Badge className={cn("border", getStatusClasses(record.status))}>
@@ -248,9 +255,8 @@ export default function AttendancePage() {
               </CardHeader>
               <CardContent className="overflow-x-auto">
                   <AttendanceStreak
-                      key={selectedEmployeeId} // Force re-render when employee changes
-                      employeeId={selectedEmployeeId}
-                      attendanceRecords={isAdminOrHR ? allAttendanceRecords : personalAttendanceRecords}
+                      key={selectedEmployeeId}
+                      data={selectedEmployeeRecords}
                   />
               </CardContent>
             </Card>
@@ -260,4 +266,3 @@ export default function AttendancePage() {
     </div>
   );
 }
-
