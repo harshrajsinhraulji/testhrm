@@ -313,7 +313,7 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleConfirmSubmit(formData!)} disabled={loading}>
+            <AlertDialogAction onClick={() => formData && handleConfirmSubmit(formData)} disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Confirm & Update Salary
             </AlertDialogAction>
@@ -323,3 +323,5 @@ export function ProfileForm({ employee, onFormSubmit }: ProfileFormProps) {
     </>
   );
 }
+
+    
