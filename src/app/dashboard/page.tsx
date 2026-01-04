@@ -1,3 +1,4 @@
+
 'use client';
 
 import { StatsCards } from '@/components/dashboard/stats-cards';
@@ -22,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { UpcomingLeaveCard } from '@/components/dashboard/upcoming-leave-card';
 import { UpcomingAnniversaries } from '@/components/dashboard/upcoming-anniversaries';
+import { WeeklyHoursChart } from '@/components/dashboard/weekly-hours-chart';
 
 
 const getWelcomeContent = (role: string | null, name?: string) => {
@@ -59,57 +61,56 @@ export default function DashboardPage() {
   const [employees, setEmployees] = useState<User[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
-  const [loading, setLoading] = useState(isAdminOrHR);
+  const [loading, setLoading] = useState(true);
   const rosterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!isAdminOrHR) return;
-
-    async function fetchDashboardData() {
-      setLoading(true);
-      try {
-        const [employeesRes, attendanceRes, leaveRes] = await Promise.all([
-          fetch('/api/employees'),
-          fetch('/api/attendance'),
-          fetch('/api/leave'),
-        ]);
-
-        if (!employeesRes.ok) throw new Error('Failed to fetch employees');
-        if (!attendanceRes.ok) throw new Error('Failed to fetch attendance');
-        if (!leaveRes.ok) throw new Error('Failed to fetch leave requests');
-
-        const employeeData: User[] = (await employeesRes.json()).map((item: any) => ({
-             id: item.id,
-            name: item.name,
-            email: item.email,
-            role: item.role,
-            avatarUrl: item.avatar_url,
-            employeeDetails: {
-                id: item.id,
-                employeeId: item.employee_id,
-                department: item.department,
-                position: item.position,
-                dateOfJoining: item.date_of_joining,
-                contactNumber: '',
-                address: '',
-                emergencyContact: { name: '', relationship: '', phone: '' }
+    // Shared fetch for attendance and leave for both user types
+    async function fetchCommonData() {
+        if (!user?.id) return;
+        setLoading(true);
+        try {
+            const [attendanceRes, leaveRes] = await Promise.all([
+                fetch(isAdminOrHR ? '/api/attendance' : `/api/attendance?employeeId=${user.id}`),
+                fetch(isAdminOrHR ? '/api/leave' : `/api/leave?employeeId=${user.id}`),
+            ]);
+            if (!attendanceRes.ok) throw new Error('Failed to fetch attendance');
+            if (!leaveRes.ok) throw new Error('Failed to fetch leave requests');
+            setAttendance(await attendanceRes.json());
+            setLeaveRequests(await leaveRes.json());
+            
+            // Admin-specific data
+            if (isAdminOrHR) {
+                const employeesRes = await fetch('/api/employees');
+                if (!employeesRes.ok) throw new Error('Failed to fetch employees');
+                const employeeData: User[] = (await employeesRes.json()).map((item: any) => ({
+                     id: item.id,
+                    name: item.name,
+                    email: item.email,
+                    role: item.role,
+                    avatarUrl: item.avatar_url,
+                    employeeDetails: {
+                        id: item.id,
+                        employeeId: item.employee_id,
+                        department: item.department,
+                        position: item.position,
+                        dateOfJoining: item.date_of_joining,
+                        contactNumber: '',
+                        address: '',
+                        emergencyContact: { name: '', relationship: '', phone: '' }
+                    }
+                }));
+                setEmployees(employeeData);
             }
-        }));
-        const attendanceData = await attendanceRes.json();
-        const leaveData = await leaveRes.json();
-
-        setEmployees(employeeData);
-        setAttendance(attendanceData);
-        setLeaveRequests(leaveData);
-      } catch (error) {
-        console.error("Failed to fetch dashboard data", error);
-      } finally {
-        setLoading(false);
-      }
+        } catch (error) {
+            console.error("Failed to fetch dashboard data", error);
+        } finally {
+            setLoading(false);
+        }
     }
 
-    fetchDashboardData();
-  }, [isAdminOrHR]);
+    fetchCommonData();
+}, [isAdminOrHR, user]);
 
 
   const filteredEmployees = useMemo(() => {
@@ -184,14 +185,13 @@ export default function DashboardPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-                <EmployeeDashboardCards />
+        <div className="space-y-6">
+            <EmployeeDashboardCards />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <WeeklyHoursChart data={attendance} loading={loading} />
                 <EmployeeCharts />
             </div>
-            <div className="lg:col-span-1 space-y-6">
-                <UpcomingLeaveCard />
-            </div>
+            <UpcomingLeaveCard />
         </div>
       )}
     </div>

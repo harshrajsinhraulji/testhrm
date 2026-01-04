@@ -29,8 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
-import { subDays, format } from "date-fns";
+import { WeeklyHoursChart } from "@/components/dashboard/weekly-hours-chart";
 
 const getStatusClasses = (status: AttendanceRecord['status']) => {
   switch (status) {
@@ -46,50 +45,6 @@ const getStatusClasses = (status: AttendanceRecord['status']) => {
       return "bg-slate-100 text-slate-800";
   }
 };
-
-const WeeklyHoursChart = ({ data }: { data: AttendanceRecord[] }) => {
-  const chartData = useMemo(() => {
-    return Array.from({ length: 7 }).map((_, i) => {
-      const date = subDays(new Date(), i);
-      const dateString = date.toISOString().split('T')[0];
-      const record = data.find(r => r.date === dateString);
-      
-      let hours = 0;
-      if (record?.totalHours) {
-        const parts = record.totalHours.match(/(\d+)h (\d+)m/);
-        if (parts) {
-          hours = parseInt(parts[1]) + parseInt(parts[2]) / 60;
-        }
-      }
-      
-      return {
-        name: format(date, 'EEE'),
-        hours: parseFloat(hours.toFixed(2)),
-      };
-    }).reverse();
-  }, [data]);
-
-  return (
-    <ResponsiveContainer width="100%" height={200}>
-      <BarChart data={chartData} margin={{ top: 20, right: 20, bottom: 0, left: -20 }}>
-        <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-        <Tooltip
-            cursor={{fill: 'hsl(var(--muted))'}}
-            content={({ active, payload }) =>
-                active && payload && payload.length ? (
-                <Card className="p-2 shadow-lg">
-                    <p className="font-bold">{`${payload[0].payload.hours.toFixed(2)} hours`}</p>
-                </Card>
-                ) : null
-            }
-        />
-        <Bar dataKey="hours" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-      </BarChart>
-    </ResponsiveContainer>
-  );
-};
-
 
 export default function AttendancePage() {
   const { user, role } = useAuth();
@@ -320,15 +275,7 @@ export default function AttendancePage() {
           </TabsContent>
            {!isAdminOrHR && (
              <TabsContent value={TABS_CONFIG.weekly.value}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Weekly Hours</CardTitle>
-                    <CardDescription>Your working hours for the last 7 days.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <WeeklyHoursChart data={selectedEmployeeRecords} />
-                  </CardContent>
-                </Card>
+                <WeeklyHoursChart data={selectedEmployeeRecords} loading={loading} />
              </TabsContent>
            )}
         </Tabs>
