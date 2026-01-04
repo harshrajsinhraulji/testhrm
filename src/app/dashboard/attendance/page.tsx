@@ -49,7 +49,6 @@ const getStatusClasses = (status: AttendanceRecord['status']) => {
 
 const WeeklyHoursChart = ({ data }: { data: AttendanceRecord[] }) => {
   const chartData = useMemo(() => {
-    const sevenDaysAgo = subDays(new Date(), 6);
     return Array.from({ length: 7 }).map((_, i) => {
       const date = subDays(new Date(), i);
       const dateString = date.toISOString().split('T')[0];
