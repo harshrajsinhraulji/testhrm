@@ -137,18 +137,6 @@ export default function DashboardPage() {
     }
   }, [activeFilter, selectedDepartment, employees, attendance, leaveRequests, isAdminOrHR]);
   
-  const getRosterTitleAndDescription = () => {
-    if (selectedDepartment) {
-      return { title: `Employees in ${selectedDepartment}`, description: `A list of all employees in the ${selectedDepartment} department.` };
-    }
-    switch (activeFilter) {
-        case 'all': return { title: 'All Employees', description: 'A complete list of all employees.' };
-        case 'present': return { title: 'Employees Present Today', description: 'Employees who have checked in today.' };
-        case 'onLeave': return { title: 'Employees on Leave', description: 'Employees with an approved leave request for today.' };
-        case 'absent': return { title: 'Absent Employees', description: 'Employees not present or on approved leave today.' };
-        default: return { title: 'Employee Roster', description: 'An overview of all employees.' };
-    }
-  }
   
   const handleDepartmentSelect = (department: string | null) => {
     setSelectedDepartment(department);
@@ -157,9 +145,6 @@ export default function DashboardPage() {
       rosterRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
-
-  const rosterInfo = getRosterTitleAndDescription();
-
 
   return (
     <div className="space-y-6">
@@ -174,47 +159,31 @@ export default function DashboardPage() {
             attendance={attendance}
             leaveRequests={leaveRequests}
           />
-          <AdminCharts onDepartmentSelect={handleDepartmentSelect} selectedDepartment={selectedDepartment} />
           <div className="grid gap-6 lg:grid-cols-5">
-            <Card className="lg:col-span-3" ref={rosterRef}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <CardTitle>{rosterInfo.title}</CardTitle>
+              <div className="lg:col-span-3">
+                  <AdminCharts onDepartmentSelect={handleDepartmentSelect} selectedDepartment={selectedDepartment} />
+              </div>
+              <div className="lg:col-span-2">
+                   <Card className="h-full">
+                      <CardHeader>
+                        <CardTitle>Recent Leave Requests</CardTitle>
                         <CardDescription>
-                          {rosterInfo.description}
+                          A summary of the most recent leave requests.
                         </CardDescription>
-                    </div>
-                    {selectedDepartment && (
-                        <Button variant="ghost" size="sm" onClick={() => handleDepartmentSelect(null)}>
-                            <X className="mr-2 h-4 w-4" />
-                            Clear Filter
-                        </Button>
-                    )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                    <div className="space-y-4">
-                        {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-                    </div>
-                ) : (
-                    <FilteredEmployeeRoster employees={filteredEmployees} />
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Recent Leave Requests</CardTitle>
-                <CardDescription>
-                  A summary of the most recent leave requests.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <RecentLeaveRequests employees={employees} />
-              </CardContent>
-            </Card>
+                      </CardHeader>
+                      <CardContent>
+                        <RecentLeaveRequests employees={employees} />
+                      </CardContent>
+                    </Card>
+              </div>
+          </div>
+          
+          <div ref={rosterRef}>
+            <FilteredEmployeeRoster 
+                department={selectedDepartment}
+                statusFilter={activeFilter}
+                onClearDepartment={() => setSelectedDepartment(null)}
+            />
           </div>
         </>
       ) : (

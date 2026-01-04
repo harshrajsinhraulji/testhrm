@@ -181,17 +181,17 @@ export default function EmployeeProfilePage() {
               <p className="text-sm text-muted-foreground">{employee.employeeDetails?.position}</p>
               <Separator className="my-4" />
               <div className="w-full text-left space-y-2 text-sm">
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="font-medium text-muted-foreground">Department:</span>
-                  <span>{employee.employeeDetails?.department}</span>
+                  <span className="text-right">{employee.employeeDetails?.department}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="font-medium text-muted-foreground">Employee ID:</span>
-                  <span>{employee.employeeDetails?.employeeId}</span>
+                  <span className="text-right">{employee.employeeDetails?.employeeId}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="font-medium text-muted-foreground">Date Joined:</span>
-                  <span>{new Date(employee.employeeDetails?.dateOfJoining || '').toLocaleDateString()}</span>
+                  <span className="text-right">{new Date(employee.employeeDetails?.dateOfJoining || '').toLocaleDateString()}</span>
                 </div>
               </div>
             </CardContent>
