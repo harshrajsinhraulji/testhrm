@@ -31,6 +31,7 @@ export async function POST(req: Request) {
         
         await client.query('BEGIN');
 
+        // Check for existing payslip
         const { rows: existingSlips } = await client.query(
             `SELECT id FROM pay_slips WHERE employee_id = $1 AND month = $2 AND year = $3`,
             [employeeId, month, year]
@@ -46,6 +47,7 @@ export async function POST(req: Request) {
         const firstDayOfMonth = new Date(year, monthIndex, 1);
         const lastDayOfMonth = new Date(year, monthIndex, daysInMonth);
 
+        // Get salary structure
         const { rows: salaryRows } = await client.query(
             `SELECT basic_salary, hra, other_allowances, pf FROM salary_structures WHERE employee_id = $1`,
             [employeeId]
@@ -59,12 +61,14 @@ export async function POST(req: Request) {
         const totalMonthlySalary = parseFloat(salary.basic_salary) + parseFloat(salary.hra) + parseFloat(salary.other_allowances);
         const totalMonthlyDeductions = parseFloat(salary.pf);
 
+        // Get attendance
         const { rows: attendanceRows } = await client.query(
             `SELECT status, record_date FROM attendance_records WHERE employee_id = $1 AND record_date >= $2 AND record_date <= $3`,
             [employeeId, firstDayOfMonth, lastDayOfMonth]
         );
         const attendanceMap = new Map(attendanceRows.map(r => [format(new Date(r.record_date), 'yyyy-MM-dd'), r.status]));
 
+        // Get approved leave
         const { rows: leaveRows } = await client.query(
             `SELECT start_date, end_date, leave_type FROM leave_requests WHERE employee_id = $1 AND status = 'Approved' AND start_date <= $2 AND end_date >= $3`,
             [employeeId, lastDayOfMonth, firstDayOfMonth]
@@ -80,6 +84,7 @@ export async function POST(req: Request) {
             });
         });
 
+        // Calculate payable days
         let payableDays = 0;
         const monthDays = eachDayOfInterval({ start: firstDayOfMonth, end: lastDayOfMonth });
 
@@ -115,6 +120,7 @@ export async function POST(req: Request) {
             throw new Error(`NaN calculated for employee ${employeeId}.`);
         }
         
+        // Insert new payslip
         await client.query(
             `INSERT INTO pay_slips (employee_id, month, year, basic_salary, allowances, deductions, net_salary)
              VALUES ($1, $2, $3, $4, $5, $6, $7)`,

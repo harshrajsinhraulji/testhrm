@@ -30,13 +30,17 @@ export async function POST(req: Request) {
         for (const employee of employees) {
             const employeeId = employee.id;
 
+            // Check if a payslip already exists for the current month and employee
             const { rows: existingSlips } = await client.query(
                 `SELECT id FROM pay_slips WHERE employee_id = $1 AND month = $2 AND year = $3`,
                 [employeeId, monthName, year]
             );
 
-            if (existingSlips.length > 0) continue;
+            if (existingSlips.length > 0) {
+                continue; // Skip if payslip already generated
+            }
 
+            // Get the employee's salary structure
             const { rows: salaryRows } = await client.query(
                 `SELECT basic_salary, hra, other_allowances, pf FROM salary_structures WHERE employee_id = $1`,
                 [employeeId]
@@ -51,17 +55,20 @@ export async function POST(req: Request) {
             const totalMonthlySalary = parseFloat(salary.basic_salary) + parseFloat(salary.hra) + parseFloat(salary.other_allowances);
             const totalMonthlyDeductions = parseFloat(salary.pf);
 
+            // Fetch all attendance records for the month
             const { rows: attendanceRows } = await client.query(
                 `SELECT status, record_date FROM attendance_records WHERE employee_id = $1 AND record_date >= $2 AND record_date <= $3`,
                 [employeeId, firstDayOfMonth, lastDayOfMonth]
             );
             const attendanceMap = new Map(attendanceRows.map(r => [format(new Date(r.record_date), 'yyyy-MM-dd'), r.status]));
 
+            // Fetch all approved leave requests that overlap with the month
             const { rows: leaveRows } = await client.query(
-                `SELECT start_date, end_date, leave_type FROM leave_requests WHERE employee_id = $1 AND status = 'Approved' AND start_date <= $2 AND end_date >= $3`,
+                `SELECT start_date, end_date, leave_type FROM leave_requests 
+                 WHERE employee_id = $1 AND status = 'Approved' AND start_date <= $2 AND end_date >= $3`,
                 [employeeId, lastDayOfMonth, firstDayOfMonth]
             );
-
+            
             const leaveMap = new Map<string, string>();
             leaveRows.forEach(leave => {
                 const interval = { start: new Date(leave.start_date), end: new Date(leave.end_date) };
@@ -109,6 +116,7 @@ export async function POST(req: Request) {
                 continue;
             }
 
+            // Insert the new payslip
             await client.query(
                 `INSERT INTO pay_slips (employee_id, month, year, basic_salary, allowances, deductions, net_salary)
                  VALUES ($1, $2, $3, $4, $5, $6, $7)`,
