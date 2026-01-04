@@ -66,7 +66,7 @@ export function AdminCharts({ onDepartmentSelect, selectedDepartment }: AdminCha
             employeeId: item.employee_id,
             department: item.department,
             position: item.position,
-            dateOfJoining: "",
+            dateOfJoining: item.date_of_joining,
             contactNumber: "",
             address: "",
             emergencyContact: { name: "", relationship: "", phone: "" },

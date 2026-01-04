@@ -85,7 +85,7 @@ export function RecentLeaveRequests({ employees }: RecentLeaveRequestsProps) {
 
     if (requests.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className="flex flex-col items-center justify-center h-full text-center py-6">
                 <p className="text-muted-foreground mb-4">You have no pending leave requests.</p>
                 <Button variant="outline" asChild>
                     <Link href="/dashboard/leave">
@@ -115,6 +115,14 @@ export function RecentLeaveRequests({ employees }: RecentLeaveRequestsProps) {
                     </div>
                 </div>
             ))}
+             <div className="pt-2">
+                <Button variant="secondary" className="w-full" asChild>
+                     <Link href="/dashboard/leave">
+                        Manage All Requests
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                </Button>
+             </div>
         </div>
     );
 }

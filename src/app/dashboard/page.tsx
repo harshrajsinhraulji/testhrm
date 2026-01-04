@@ -21,6 +21,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { UpcomingLeaveCard } from '@/components/dashboard/upcoming-leave-card';
+import { UpcomingAnniversaries } from '@/components/dashboard/upcoming-anniversaries';
 
 
 const getWelcomeContent = (role: string | null, name?: string) => {
@@ -88,7 +89,7 @@ export default function DashboardPage() {
                 employeeId: item.employee_id,
                 department: item.department,
                 position: item.position,
-                dateOfJoining: '',
+                dateOfJoining: item.date_of_joining,
                 contactNumber: '',
                 address: '',
                 emergencyContact: { name: '', relationship: '', phone: '' }
@@ -171,17 +172,15 @@ export default function DashboardPage() {
               </div>
           </div>
           <div className="lg:col-span-1 space-y-6">
-             <Card className="h-full">
+             <Card>
                 <CardHeader>
                   <CardTitle>Recent Leave Requests</CardTitle>
-                  <CardDescription>
-                    A summary of the most recent leave requests.
-                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <RecentLeaveRequests employees={employees} />
                 </CardContent>
               </Card>
+              <UpcomingAnniversaries employees={employees} />
           </div>
         </div>
       ) : (
