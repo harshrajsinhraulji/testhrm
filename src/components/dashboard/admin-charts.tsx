@@ -45,7 +45,7 @@ const chartConfig = {
   },
   "Human Resources": {
     label: "Human Resources",
-    color: "hsl(220, 15%, 65%)",
+    color: "hsl(210, 70%, 60%)",
   },
   Finance: {
     label: "Finance",
@@ -53,7 +53,7 @@ const chartConfig = {
   },
   "Customer Support": {
     label: "Customer Support",
-    color: "hsl(210, 70%, 60%)",
+    color: "hsl(220, 15%, 65%)",
   },
    Unassigned: {
     label: "Unassigned",
