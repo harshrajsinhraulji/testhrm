@@ -78,12 +78,13 @@ export async function GET(req: Request) {
       return NextResponse.json(paySlips);
 
     } else {
-      // Fetching all salary structures for admin view
+      // Fetching all salary structures for admin view and calculating stats
       const { rows } = await db.query(
         `SELECT 
           e.id as "employeeDbId",
           e.employee_id as "employeeId",
           e.name as "employeeName",
+          e.department,
           COALESCE(ss.basic_salary, 0) as "basicSalary",
           COALESCE(ss.hra, 0) as "hra",
           COALESCE(ss.other_allowances, 0) as "otherAllowances",
@@ -94,9 +95,10 @@ export async function GET(req: Request) {
       );
 
        const salaryStructures: SalaryStructure[] = rows.map(row => ({
-        employeeDbId: row.employeeDbId, // The UUID from the employees table
-        employeeId: row.employeeId, // The human-readable ID
+        employeeDbId: row.employeeDbId,
+        employeeId: row.employeeId,
         employeeName: row.employeeName,
+        department: row.department,
         basicSalary: parseFloat(row.basicSalary),
         hra: parseFloat(row.hra),
         otherAllowances: parseFloat(row.otherAllowances),
@@ -104,7 +106,29 @@ export async function GET(req: Request) {
         tax: 0 // tax calculation can be added later
       }));
 
-      return NextResponse.json(salaryStructures);
+      // Calculate statistics
+      const totalEmployees = salaryStructures.length;
+      const totalMonthlyPayroll = salaryStructures.reduce((acc, curr) => acc + curr.basicSalary + curr.hra + curr.otherAllowances, 0);
+      const averageSalary = totalEmployees > 0 ? totalMonthlyPayroll / totalEmployees : 0;
+      
+      const departmentPayroll = salaryStructures.reduce((acc, curr) => {
+          const dept = curr.department || 'Unassigned';
+          const salary = curr.basicSalary + curr.hra + curr.otherAllowances;
+          acc[dept] = (acc[dept] || 0) + salary;
+          return acc;
+      }, {} as Record<string, number>);
+
+      const departmentBreakdown = Object.entries(departmentPayroll).map(([name, total]) => ({ name, total }));
+
+      return NextResponse.json({
+          salaryStructures,
+          stats: {
+              totalEmployees,
+              totalMonthlyPayroll,
+              averageSalary,
+          },
+          departmentBreakdown,
+      });
     }
   } catch (error) {
     console.error('API Error fetching payroll data:', error);
@@ -124,7 +148,6 @@ export async function PATCH(req: Request) {
 
         const { employeeId, basicSalary, hra, otherAllowances, pf } = validation.data;
 
-        // Use an "UPSERT" query to either insert a new structure or update an existing one.
         const query = `
             INSERT INTO salary_structures (employee_id, basic_salary, hra, other_allowances, pf)
             VALUES ($1, $2, $3, $4, $5)

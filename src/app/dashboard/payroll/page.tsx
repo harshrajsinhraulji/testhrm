@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
 import type { PaySlip, SalaryStructure } from "@/lib/types";
-import { MoreHorizontal, Pencil, FileText } from "lucide-react";
+import { MoreHorizontal, Pencil, FileText, Users, ReceiptIndianRupee, AreaChart } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,17 +30,30 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
 };
+
+interface PayrollStats {
+    totalEmployees: number;
+    totalMonthlyPayroll: number;
+    averageSalary: number;
+}
+interface DepartmentBreakdown {
+    name: string;
+    total: number;
+}
 
 export default function PayrollPage() {
   const { user, role } = useAuth();
   const { toast } = useToast();
   const [paySlips, setPaySlips] = useState<PaySlip[]>([]);
   const [salaryStructures, setSalaryStructures] = useState<SalaryStructure[]>([]);
+  const [stats, setStats] = useState<PayrollStats | null>(null);
+  const [departmentBreakdown, setDepartmentBreakdown] = useState<DepartmentBreakdown[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedStructure, setSelectedStructure] = useState<SalaryStructure | null>(null);
@@ -52,7 +66,9 @@ export default function PayrollPage() {
         const res = await fetch('/api/payroll');
         if (!res.ok) throw new Error("Failed to fetch salary structures.");
         const data = await res.json();
-        setSalaryStructures(data);
+        setSalaryStructures(data.salaryStructures);
+        setStats(data.stats);
+        setDepartmentBreakdown(data.departmentBreakdown);
       } else {
         const res = await fetch(`/api/payroll?employeeId=${user.employeeDetails?.id}`);
         if (!res.ok) throw new Error("Failed to fetch your payslips.");
@@ -111,22 +127,17 @@ export default function PayrollPage() {
         <div className="space-y-6">
             <PageHeader
                 title="Payroll"
-                description={isAdminOrHR ? "View and manage employee salary details." : "View your payroll information and salary details."}
+                description={isAdminOrHR ? "Manage employee salaries and view financial insights." : "View your payroll information and salary details."}
             />
-             <Card>
-                <CardHeader>
-                    <Skeleton className="h-6 w-48" />
-                    <Skeleton className="h-4 w-64" />
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-2">
-                        <Skeleton className="h-12 w-full" />
-                        <Skeleton className="h-12 w-full" />
-                        <Skeleton className="h-12 w-full" />
-                        <Skeleton className="h-12 w-full" />
-                    </div>
-                </CardContent>
-            </Card>
+             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <Skeleton className="h-28" />
+                <Skeleton className="h-28" />
+                <Skeleton className="h-28" />
+             </div>
+             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                <Skeleton className="lg:col-span-3 h-80" />
+                <Skeleton className="lg:col-span-2 h-80" />
+            </div>
         </div>
      )
   }
@@ -134,8 +145,8 @@ export default function PayrollPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Payroll"
-        description={isAdminOrHR ? "View and manage employee salary details." : "View your payroll information and salary details."}
+        title={isAdminOrHR ? "Payroll Command Center" : "Payroll"}
+        description={isAdminOrHR ? "Manage employee salaries and view financial insights." : "View your payroll information and salary details."}
       >
         {isAdminOrHR && (
           <AlertDialog>
@@ -149,7 +160,7 @@ export default function PayrollPage() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will generate new payslips for all employees for the current month based on their saved salary structures. This action cannot be undone.
+                  This will generate new payslips for all employees for the current month. This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -162,6 +173,66 @@ export default function PayrollPage() {
       </PageHeader>
       {isAdminOrHR ? (
         <>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Monthly Payroll</CardTitle>
+                        <ReceiptIndianRupee className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{formatCurrency(stats?.totalMonthlyPayroll || 0)}</div>
+                        <p className="text-xs text-muted-foreground">Estimated total for current structures</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats?.totalEmployees || 0}</div>
+                        <p className="text-xs text-muted-foreground">Employees with salary structures</p>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Average Monthly Salary</CardTitle>
+                        <AreaChart className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{formatCurrency(stats?.averageSalary || 0)}</div>
+                        <p className="text-xs text-muted-foreground">Mean salary across all employees</p>
+                    </CardContent>
+                </Card>
+            </div>
+            
+             <Card>
+                <CardHeader>
+                    <CardTitle>Payroll by Department</CardTitle>
+                    <CardDescription>A visual breakdown of salary allocation across departments.</CardDescription>
+                </CardHeader>
+                <CardContent className="pl-2">
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={departmentBreakdown} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                            <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                            <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => formatCurrency(value as number)} />
+                            <Tooltip
+                                cursor={{fill: 'hsl(var(--muted))'}}
+                                content={({ active, payload }) =>
+                                    active && payload && payload.length ? (
+                                    <Card className="p-2 shadow-lg">
+                                        <p className="font-bold">{`${payload[0].payload.name}`}</p>
+                                        <p className="text-sm text-primary">{`Total Payroll: ${formatCurrency(payload[0].value as number)}`}</p>
+                                    </Card>
+                                    ) : null
+                                }
+                            />
+                            <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </CardContent>
+             </Card>
+
             <Card>
                 <CardHeader>
                     <CardTitle>Employee Salary Structures</CardTitle>
@@ -173,8 +244,8 @@ export default function PayrollPage() {
                         <TableRow>
                             <TableHead>Employee</TableHead>
                             <TableHead className="text-right">Basic Salary</TableHead>
-                            <TableHead className="text-right">HRA</TableHead>
-                            <TableHead className="text-right">PF</TableHead>
+                            <TableHead className="text-right">Allowances</TableHead>
+                            <TableHead className="text-right">Deductions (PF)</TableHead>
                             <TableHead className="text-right">Total CTC</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
@@ -187,7 +258,7 @@ export default function PayrollPage() {
                                     <div className="text-xs text-muted-foreground">{structure.employeeId}</div>
                                 </TableCell>
                                 <TableCell className="text-right font-mono">{formatCurrency(structure.basicSalary)}</TableCell>
-                                <TableCell className="text-right font-mono">{formatCurrency(structure.hra)}</TableCell>
+                                <TableCell className="text-right font-mono">{formatCurrency(structure.hra + structure.otherAllowances)}</TableCell>
                                 <TableCell className="text-right font-mono">{formatCurrency(structure.pf)}</TableCell>
                                 <TableCell className="text-right font-mono">{formatCurrency(structure.basicSalary + structure.hra + structure.otherAllowances)}</TableCell>
                                 <TableCell className="text-right">
@@ -217,6 +288,7 @@ export default function PayrollPage() {
                     </Table>
                 </CardContent>
             </Card>
+
             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                  <DialogContent className="sm:max-w-[480px]">
                     <DialogHeader>

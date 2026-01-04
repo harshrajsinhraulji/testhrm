@@ -71,6 +71,7 @@ export interface SalaryStructure {
   employeeDbId: string; // The database UUID for the employee
   employeeId: string; // This is the human-readable ID like "DF001"
   employeeName?: string; // Name of the employee
+  department?: string; // Department of the employee
   basicSalary: number;
   hra: number;
   otherAllowances: number;
