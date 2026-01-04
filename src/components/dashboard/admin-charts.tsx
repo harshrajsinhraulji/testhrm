@@ -46,15 +46,15 @@ const chartConfig = {
   },
   "Human Resources": {
     label: "Human Resources",
-    color: "hsl(var(--chart-2))",
+    color: "hsl(260, 60%, 60%)", 
   },
   Finance: {
     label: "Finance",
-    color: "hsl(var(--chart-3))",
+    color: "hsl(200, 70%, 55%)",
   },
   "Customer Support": {
     label: "Customer Support",
-    color: "hsl(var(--chart-4))",
+    color: "hsl(180, 60%, 45%)",
   },
    Unassigned: {
     label: "Unassigned",
