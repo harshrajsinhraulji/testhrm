@@ -1,5 +1,5 @@
 
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import db from '@/lib/db';
 import { getDaysInMonth, eachDayOfInterval, format, getDay } from 'date-fns';
 import { getRoleFromToken } from '@/app/api/helpers';
@@ -11,7 +11,7 @@ const generateIndividualSchema = z.object({
   year: z.number(),
 });
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     const requestingUserRole = getRoleFromToken(req);
 
     if (requestingUserRole !== 'Admin') {
